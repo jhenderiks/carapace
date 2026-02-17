@@ -1,0 +1,45 @@
+services:
+  gateway:
+    build: .
+    container_name: openclaw
+    command: [gateway]
+    env_file:
+      - .env
+    volumes:
+      - ./config:/home/openclaw/.openclaw:rw
+      - ./workspace:/home/openclaw/.openclaw/workspace:rw
+    ports:
+      - 18789:18789
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /home/openclaw:rw,noexec,nosuid,size=2G
+      - /tmp:rw,noexec,nosuid,size=256m
+    shm_size: 256m
+    pids_limit: 1024
+    init: true
+    restart: unless-stopped
+
+  cli:
+    build: .
+    container_name: openclaw-cli
+    profiles: [cli]
+    env_file:
+      - .env
+    network_mode: service:gateway
+    volumes:
+      - ./config:/home/openclaw/.openclaw:rw
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    pids_limit: 128
+    stdin_open: true
+    tty: true
+    init: true

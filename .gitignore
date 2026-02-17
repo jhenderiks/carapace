@@ -1,0 +1,22 @@
+# dependencies
+node_modules/
+
+# docker
+docker-compose.override.yml
+
+# env
+.env
+
+# local configs
+.cursor/
+.direnv/
+
+# os
+.DS_Store
+.fuse_hidden*
+.Trash-*/
+Thumbs.db
+
+# runtime
+config/
+workspace/

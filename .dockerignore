@@ -1,0 +1,25 @@
+# dependencies
+node_modules
+
+# env
+.env
+.env.example
+.envrc
+
+# local configs
+.cursor
+
+# git
+.git
+.githooks
+.gitignore
+
+# nix
+.direnv
+flake.nix
+flake.lock
+
+# os
+.DS_Store
+.fuse_hidden*
+Thumbs.db
