@@ -29,7 +29,7 @@ It's not a sandbox (the agent still has network access and can write to mounted 
 
 ```bash
 # Clone the repo
-git clone https://github.com/pxlbyt-co/carapace.git
+git clone https://github.com/jhenderiks/carapace.git
 cd carapace
 
 # Install dependencies (builds the lockfile and patches)
