@@ -6188,3 +6188,62 @@ index a64c8085e26ef5895547eac05ff52d31237b88c0..00000000000000000000000000000000
 diff --git a/extensions/memory-lancedb/node_modules/openai/version.mjs.map b/home/arlo/.bun/install/cache/openclaw@2026.2.15@@@1/extensions/memory-lancedb/node_modules/openai/version.mjs.map
 deleted file mode 100644
 index 0c09c723b1318a6966eaf1482f5f556f052a5491..0000000000000000000000000000000000000000
+diff --git a/dist/auth-profiles-GYsKiVaE.js b/dist/auth-profiles-GYsKiVaE.js
+index 25c6259..5eed634 100644
+--- a/dist/auth-profiles-GYsKiVaE.js
++++ b/dist/auth-profiles-GYsKiVaE.js
+@@ -2300,7 +2300,8 @@ async function resolveImplicitBedrockProvider(params) {
+ const ANTHROPIC_MODEL_ALIASES = {
+ 	"opus-4.6": "claude-opus-4-6",
+ 	"opus-4.5": "claude-opus-4-5",
+-	"sonnet-4.5": "claude-sonnet-4-5"
++	"sonnet-4.5": "claude-sonnet-4-5",
++	"sonnet-4.6": "claude-sonnet-4-6"
+ };
+ const OPENAI_CODEX_OAUTH_MODEL_PREFIXES = ["gpt-5.3-codex"];
+ function normalizeAliasKey(value) {
+diff --git a/dist/config-CF5WgkYh.js b/dist/config-CF5WgkYh.js
+index 8736531..f0168e6 100644
+--- a/dist/config-CF5WgkYh.js
++++ b/dist/config-CF5WgkYh.js
+@@ -190,7 +190,7 @@ function resolveTalkApiKey(env = process.env, deps = {}) {
+ let defaultWarnState = { warned: false };
+ const DEFAULT_MODEL_ALIASES = {
+ 	opus: "anthropic/claude-opus-4-6",
+-	sonnet: "anthropic/claude-sonnet-4-5",
++	sonnet: "anthropic/claude-sonnet-4-6",
+ 	gpt: "openai/gpt-5.2",
+ 	"gpt-mini": "openai/gpt-5-mini",
+ 	gemini: "google/gemini-3-pro-preview",
+diff --git a/dist/pi-embedded-n26FO9Pa.js b/dist/pi-embedded-n26FO9Pa.js
+index 23b1f6c..fe4c4d5 100644
+--- a/dist/pi-embedded-n26FO9Pa.js
++++ b/dist/pi-embedded-n26FO9Pa.js
+@@ -34544,9 +34544,11 @@ const DEFAULT_CLAUDE_BACKEND = {
+ 		"claude-opus-4-5": "opus",
+ 		"claude-opus-4": "opus",
+ 		sonnet: "sonnet",
++		"sonnet-4.6": "sonnet",
+ 		"sonnet-4.5": "sonnet",
+ 		"sonnet-4.1": "sonnet",
+ 		"sonnet-4.0": "sonnet",
++		"claude-sonnet-4-6": "sonnet",
+ 		"claude-sonnet-4-5": "sonnet",
+ 		"claude-sonnet-4-1": "sonnet",
+ 		"claude-sonnet-4-0": "sonnet",
+diff --git a/dist/subagent-registry-kdTa9uwX.js b/dist/subagent-registry-kdTa9uwX.js
+index fc340ff..17b875d 100644
+--- a/dist/subagent-registry-kdTa9uwX.js
++++ b/dist/subagent-registry-kdTa9uwX.js
+@@ -28949,9 +28949,11 @@ const DEFAULT_CLAUDE_BACKEND = {
+ 		"claude-opus-4-5": "opus",
+ 		"claude-opus-4": "opus",
+ 		sonnet: "sonnet",
++		"sonnet-4.6": "sonnet",
+ 		"sonnet-4.5": "sonnet",
+ 		"sonnet-4.1": "sonnet",
+ 		"sonnet-4.0": "sonnet",
++		"claude-sonnet-4-6": "sonnet",
+ 		"claude-sonnet-4-5": "sonnet",
+ 		"claude-sonnet-4-1": "sonnet",
+ 		"claude-sonnet-4-0": "sonnet",
