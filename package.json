@@ -13,12 +13,12 @@
   "dependencies": {
     "@anthropic-ai/claude-code": "2.1.45",
     "@openai/codex": "0.101.0",
-    "openclaw": "2026.2.15",
+    "openclaw": "2026.2.17",
     "opencode-ai": "1.2.6",
     "typescript": "5.9.3"
   },
   "patchedDependencies": {
     "undici@7.21.0": "patches/undici@7.21.0.patch",
-    "openclaw@2026.2.15": "patches/openclaw@2026.2.15.patch"
+    "openclaw@2026.2.17": "patches/openclaw@2026.2.17.patch"
   }
 }
