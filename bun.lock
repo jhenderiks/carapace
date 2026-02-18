@@ -5,11 +5,11 @@
     "": {
       "name": "arlo",
       "dependencies": {
-        "@anthropic-ai/claude-code": "latest",
-        "@openai/codex": "latest",
-        "openclaw": "latest",
-        "opencode-ai": "latest",
-        "typescript": "latest",
+        "@anthropic-ai/claude-code": "2.1.45",
+        "@openai/codex": "0.101.0",
+        "openclaw": "2026.2.15",
+        "opencode-ai": "1.2.6",
+        "typescript": "5.9.3",
       },
     },
   },
