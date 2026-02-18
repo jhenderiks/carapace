@@ -16,7 +16,7 @@ services:
       - ALL
     read_only: true
     tmpfs:
-      - /home/openclaw:rw,noexec,nosuid,size=2G
+      - /home/openclaw:rw,noexec,nosuid,size=2G,uid=1000,gid=1000,mode=0755
       - /tmp:rw,noexec,nosuid,size=256m
     shm_size: 256m
     pids_limit: 1024
