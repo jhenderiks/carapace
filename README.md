@@ -114,6 +114,82 @@ Then rebuild: `docker compose build`
 
 Uncomment or add packages in the Dockerfile's `apt-get install` block. Network debug tools (nmap, traceroute, etc.) are listed but commented out.
 
+### Extending the Compose
+
+You can layer additional configuration on top of the base `docker-compose.yml` without modifying it directly — keeping your personal config separate and upgradeable.
+
+**Option 1: Override file** (simplest)
+
+Create a `docker-compose.override.yml` in the same directory. Docker Compose automatically merges it at runtime:
+
+```yaml
+# docker-compose.override.yml
+services:
+  gateway:
+    volumes:
+      - ~/.ssh:/home/openclaw/.ssh:rw
+      - ~/.gitconfig:/home/openclaw/.gitconfig:rw
+```
+
+**Option 2: Parent compose with `include`**
+
+For more complex setups (companion services, custom networks, multiple mounts), create a parent compose that includes carapace as a base:
+
+```yaml
+# ~/my-setup/docker-compose.yml
+include:
+  - carapace/docker-compose.yml
+
+services:
+  gateway:
+    volumes:
+      - ./my-config:/home/openclaw/.openclaw:rw
+      - ./my-workspace:/home/openclaw/.openclaw/workspace:rw
+```
+
+Both approaches let you keep carapace as a clean upstream you can `git pull` and update independently.
+
+### Additional Home Directory Mounts
+
+The base compose leaves most of `/home/openclaw` as ephemeral tmpfs — it resets on container restart. For a more persistent setup, you can bind-mount directories from your host:
+
+| Mount | Purpose |
+|---|---|
+| `~/.ssh:/home/openclaw/.ssh:rw` | SSH keys for git, remote access |
+| `~/.gitconfig:/home/openclaw/.gitconfig:rw` | Git identity and config |
+| `~/.codex:/home/openclaw/.codex:rw` | Codex agent configuration |
+| `~/.node-llama-cpp:/home/openclaw/.node-llama-cpp:rw` | Local LLM model files |
+| `/your/path:/mnt:rw` | Persistent workspace volume for repos, data, etc. |
+
+These are all optional — only add what your use case actually needs.
+
+### Named Network
+
+By default, Carapace uses Docker's default bridge network. If you want the gateway reachable by other containers (e.g., a reverse proxy or companion services), define a named network via an override:
+
+```yaml
+# docker-compose.override.yml
+networks:
+  carapace:
+    name: carapace
+    ipam:
+      config:
+        - subnet: 172.19.0.0/16
+
+services:
+  gateway:
+    networks:
+      - carapace
+```
+
+### Versioning Your Workspace
+
+Your agent's `config/` and `workspace/` directories hold its identity, memory, skills, and settings — worth treating like code.
+
+Consider keeping them in a dedicated git repository separate from carapace, then mounting from there instead of `./config` and `./workspace`. This lets you version and restore your agent's state independently of the container setup, and pull carapace updates without touching your personal config.
+
+How you structure this is entirely up to you — the mounts are just directories.
+
 ## Patches
 
 Carapace may ship patches for upstream dependencies when fixes haven't been released yet. Current patches:
