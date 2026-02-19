@@ -2,7 +2,7 @@
 
 A hardened Docker container for running [OpenClaw](https://github.com/openclaw/openclaw) — the AI agent gateway.
 
-Carapace wraps OpenClaw in a security-focused container with sensible defaults: read-only root filesystem, dropped capabilities, no-new-privileges, pid limits, and a non-root user. It includes common tools for agent workflows (ffmpeg, ripgrep, git, gh, imagemagick, yt-dlp, etc.) so your agent can actually get things done.
+Carapace wraps OpenClaw in a security-focused container with sensible defaults: read-only root filesystem, dropped capabilities, no-new-privileges, pid limits, and a non-root user. The container is mostly ephemeral — only two directories persist across restarts: `config/` (OpenClaw state) and `workspace/` (agent identity, memory, and skills). Everything else resets on restart.
 
 ## Why?
 
@@ -17,6 +17,20 @@ OpenClaw runs an AI agent with access to shell commands, files, and external ser
 - **No new privileges** — prevents setuid/setgid abuse
 
 It's not a sandbox (the agent still has network access and can write to mounted volumes), but it significantly reduces the blast radius.
+
+## Included Tools
+
+The container image includes:
+
+| Category | Tools |
+|---|---|
+| **Shell** | bat, eza, fd-find, fzf, jq, ripgrep |
+| **Media** | ffmpeg, imagemagick, yt-dlp |
+| **Dev** | git, gh (GitHub CLI), ssh, python3, bun, typescript |
+| **Network** | curl, wget |
+| **Browser** | chromium (headless) |
+| **Coding Agents** | Claude Code, Codex, OpenCode |
+| **System** | trash-cli, unzip |
 
 ## Quick Start
 
@@ -67,25 +81,16 @@ bun run cli
 
 ## Architecture
 
-```
-carapace/
-├── Dockerfile          # Container image — Debian slim + tools + OpenClaw
-├── docker-compose.yml  # Service definitions (gateway + cli)
-├── package.json        # Dependencies (openclaw, coding agents)
-├── patches/            # Upstream patches (see below)
-├── .env.example        # Environment template
-├── config/             # ← OpenClaw state (gitignored, created at runtime)
-└── workspace/          # ← Agent workspace (gitignored, created at runtime)
-```
+### Persistent State
 
-### Container Mounts
+Two directories survive container restarts via bind mounts:
 
 | Host Path | Container Path | Purpose |
 |---|---|---|
-| `./config` | `/home/openclaw/.openclaw` | OpenClaw state directory (config, sessions, agents) |
-| `./workspace` | `/home/openclaw/.openclaw/workspace` | Agent workspace (SOUL.md, memory/, skills/, etc.) |
+| `./config` | `/home/openclaw/.openclaw` | OpenClaw state — config, sessions, agent metadata |
+| `./workspace` | `/home/openclaw/.openclaw/workspace` | Agent workspace — identity (`SOUL.md`), `memory/`, `skills/`, tasks, etc. |
 
-The home directory (`/home/openclaw`) is a 2GB tmpfs — ephemeral across container restarts. Only `config/` and `workspace/` persist via bind mounts.
+Everything else under `/home/openclaw` is a 2GB tmpfs — it resets on restart. This includes SSH keys, git config, and tool state unless you explicitly bind-mount them (see [Additional Home Directory Mounts](#additional-home-directory-mounts)).
 
 ### Services
 
@@ -190,31 +195,6 @@ Consider keeping them in a dedicated git repository separate from carapace, then
 
 How you structure this is entirely up to you — the mounts are just directories.
 
-## Patches
-
-Carapace may ship patches for upstream dependencies when fixes haven't been released yet. Current patches:
-
-| Package | Why |
-|---|---|
-| `openclaw` | Discord guild message routing fix |
-| `undici` | HTTP client fix |
-
-These are applied automatically by Bun during `bun install`. When upstream releases include the fixes, the patches will be removed.
-
-## Included Tools
-
-The container image includes:
-
-| Category | Tools |
-|---|---|
-| **Shell** | bat, eza, fd-find, fzf, jq, ripgrep |
-| **Media** | ffmpeg, imagemagick, yt-dlp |
-| **Dev** | git, gh (GitHub CLI), ssh, python3, bun, typescript |
-| **Network** | curl, wget |
-| **Browser** | chromium (headless) |
-| **Coding Agents** | Claude Code, Codex, OpenCode |
-| **System** | trash-cli, unzip |
-
 ## Security Model
 
 **What Carapace protects against:**
@@ -230,6 +210,17 @@ The container image includes:
 - Malicious actions within the agent's granted permissions
 
 Carapace is defense-in-depth, not a sandbox. It reduces risk — it doesn't eliminate it. Always review your agent's capabilities and limit API key permissions where possible.
+
+## Patches
+
+Carapace may ship patches for upstream dependencies when fixes haven't been released yet. Current patches:
+
+| Package | Why |
+|---|---|
+| `openclaw` | Discord guild message routing fix |
+| `undici` | HTTP client fix |
+
+These are applied automatically by Bun during `bun install`. When upstream releases include the fixes, the patches will be removed.
 
 ## License
 
