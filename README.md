@@ -4,6 +4,23 @@ A hardened Docker container for running [OpenClaw](https://github.com/openclaw/o
 
 Carapace wraps OpenClaw in a security-focused container with sensible defaults: read-only root filesystem, dropped capabilities, no-new-privileges, pid limits, and a non-root user. The container is mostly ephemeral — only two directories persist across restarts: `config/` (OpenClaw state) and `workspace/` (agent identity, memory, and skills). Everything else resets on restart.
 
+## Contents
+
+- [Why?](#why)
+- [Included Tools](#included-tools)
+- [Quick Start](#quick-start)
+- [Architecture](#architecture)
+- [Customization](#customization)
+  - [UID/GID and Permissions](#uidgid-and-permissions)
+  - [Adding Tools](#adding-tools)
+  - [Extending the Compose](#extending-the-compose)
+  - [Additional Home Directory Mounts](#additional-home-directory-mounts)
+  - [Named Network](#named-network)
+  - [Versioning Your Workspace](#versioning-your-workspace)
+- [Security Model](#security-model)
+- [Patches](#patches)
+- [License](#license)
+
 ## Why?
 
 OpenClaw runs an AI agent with access to shell commands, files, and external services. That's powerful — and risky. Carapace adds a layer of defense:
