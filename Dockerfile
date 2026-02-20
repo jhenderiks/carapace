@@ -76,6 +76,9 @@ WORKDIR ${APP}
 COPY --chown=${UID}:${GID} bun.lock package.json .
 COPY --chown=${UID}:${GID} patches patches
 
-RUN bun i --frozen-lockfile
+RUN bun i --frozen-lockfile \
+  # OpenClaw 2026.2.19+ blocks world-writable plugin files; normalize modes after install
+  && find ${APP}/node_modules/openclaw/extensions -type d -exec chmod 755 {} + \
+  && find ${APP}/node_modules/openclaw/extensions -type f -exec chmod 644 {} +
 
 ENTRYPOINT ["bun", "openclaw"]
