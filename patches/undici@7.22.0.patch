@@ -1,5 +1,4 @@
 diff --git a/lib/core/connect.js b/lib/core/connect.js
-index a49af91486e62333e0366506d4bb97d1cefac74c..24f6c053fa6691f0a268bb4a2b0af357108ed615 100644
 --- a/lib/core/connect.js
 +++ b/lib/core/connect.js
 @@ -71,7 +71,7 @@ function buildConnector ({ allowH2, useH2c, maxCachedSessions, socketPath, timeo

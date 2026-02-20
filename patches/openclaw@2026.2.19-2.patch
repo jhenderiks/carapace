@@ -1,0 +1,200 @@
+diff --git a/dist/pi-embedded-CHb5giY2.js b/dist/pi-embedded-CHb5giY2.js
+index 69bc1080bb9ee7958aef05b215b14dba4045b13c..516fe29528b07602c610c369b2e37b938b5be141 100644
+--- a/dist/pi-embedded-CHb5giY2.js
++++ b/dist/pi-embedded-CHb5giY2.js
+@@ -44039,7 +44039,7 @@ async function handleDiscordReactionEvent(params) {
+ 		if (botUserId && user.id === botUserId) return;
+ 		const isGuildMessage = Boolean(data.guild_id);
+ 		const guildInfo = isGuildMessage ? resolveDiscordGuildEntry({
+-			guild: data.guild ?? void 0,
++			guild: data.guild ?? (data.guild_id ? { id: data.guild_id, name: void 0 } : void 0),
+ 			guildEntries
+ 		}) : null;
+ 		if (isGuildMessage && guildEntries && Object.keys(guildEntries).length > 0 && !guildInfo) return;
+@@ -44787,7 +44787,7 @@ async function preflightDiscordMessage(params) {
+ 		return null;
+ 	}
+ 	const guildInfo = isGuildMessage ? resolveDiscordGuildEntry({
+-		guild: params.data.guild ?? void 0,
++		guild: params.data.guild ?? (params.data.guild_id ? { id: params.data.guild_id, name: void 0 } : void 0),
+ 		guildEntries: params.guildEntries
+ 	}) : null;
+ 	logDebug(`[discord-preflight] guild_id=${params.data.guild_id} guild_obj=${!!params.data.guild} guild_obj_id=${params.data.guild?.id} guildInfo=${!!guildInfo} guildEntries=${params.guildEntries ? Object.keys(params.guildEntries).join(",") : "none"}`);
+@@ -44984,7 +44984,7 @@ async function preflightDiscordMessage(params) {
+ 	const systemText = resolveDiscordSystemEvent(message, resolveDiscordSystemLocation({
+ 		isDirectMessage,
+ 		isGroupDm,
+-		guild: params.data.guild ?? void 0,
++		guild: params.data.guild ?? (params.data.guild_id ? { id: params.data.guild_id, name: void 0 } : void 0),
+ 		channelName: channelName ?? messageChannelId
+ 	}));
+ 	if (systemText) {
+@@ -45422,7 +45422,7 @@ async function processDiscordMessage(ctx) {
+ 	});
+ 	if (statusReactionsEnabled) statusReactions.setQueued();
+ 	const fromLabel = isDirectMessage ? buildDirectLabel(author) : buildGuildLabel({
+-		guild: data.guild ?? void 0,
++		guild: data.guild ?? (data.guild_id ? { id: data.guild_id, name: void 0 } : void 0),
+ 		channelName: channelName ?? messageChannelId,
+ 		channelId: messageChannelId
+ 	});
+diff --git a/dist/pi-embedded-Cn8f5u97.js b/dist/pi-embedded-Cn8f5u97.js
+index ac1bfbd6f85c38332a830991ee8e4f820567f86b..21280ffd770bf8784118426c7546b4e37738c3a7 100644
+--- a/dist/pi-embedded-Cn8f5u97.js
++++ b/dist/pi-embedded-Cn8f5u97.js
+@@ -49057,7 +49057,7 @@ async function handleDiscordReactionEvent(params) {
+ 		if (botUserId && user.id === botUserId) return;
+ 		const isGuildMessage = Boolean(data.guild_id);
+ 		const guildInfo = isGuildMessage ? resolveDiscordGuildEntry({
+-			guild: data.guild ?? void 0,
++			guild: data.guild ?? (data.guild_id ? { id: data.guild_id, name: void 0 } : void 0),
+ 			guildEntries
+ 		}) : null;
+ 		if (isGuildMessage && guildEntries && Object.keys(guildEntries).length > 0 && !guildInfo) return;
+@@ -49805,7 +49805,7 @@ async function preflightDiscordMessage(params) {
+ 		return null;
+ 	}
+ 	const guildInfo = isGuildMessage ? resolveDiscordGuildEntry({
+-		guild: params.data.guild ?? void 0,
++		guild: params.data.guild ?? (params.data.guild_id ? { id: params.data.guild_id, name: void 0 } : void 0),
+ 		guildEntries: params.guildEntries
+ 	}) : null;
+ 	logDebug(`[discord-preflight] guild_id=${params.data.guild_id} guild_obj=${!!params.data.guild} guild_obj_id=${params.data.guild?.id} guildInfo=${!!guildInfo} guildEntries=${params.guildEntries ? Object.keys(params.guildEntries).join(",") : "none"}`);
+@@ -50002,7 +50002,7 @@ async function preflightDiscordMessage(params) {
+ 	const systemText = resolveDiscordSystemEvent(message, resolveDiscordSystemLocation({
+ 		isDirectMessage,
+ 		isGroupDm,
+-		guild: params.data.guild ?? void 0,
++		guild: params.data.guild ?? (params.data.guild_id ? { id: params.data.guild_id, name: void 0 } : void 0),
+ 		channelName: channelName ?? messageChannelId
+ 	}));
+ 	if (systemText) {
+@@ -50440,7 +50440,7 @@ async function processDiscordMessage(ctx) {
+ 	});
+ 	if (statusReactionsEnabled) statusReactions.setQueued();
+ 	const fromLabel = isDirectMessage ? buildDirectLabel(author) : buildGuildLabel({
+-		guild: data.guild ?? void 0,
++		guild: data.guild ?? (data.guild_id ? { id: data.guild_id, name: void 0 } : void 0),
+ 		channelName: channelName ?? messageChannelId,
+ 		channelId: messageChannelId
+ 	});
+diff --git a/dist/plugin-sdk/reply-Bsg9j6AP.js b/dist/plugin-sdk/reply-Bsg9j6AP.js
+index 32ce358ca666dff15dd079727cb1ecbb76ad33c8..cd4274f7c00b8723befad808437b1a32fe5c5206 100644
+--- a/dist/plugin-sdk/reply-Bsg9j6AP.js
++++ b/dist/plugin-sdk/reply-Bsg9j6AP.js
+@@ -22524,7 +22524,7 @@ async function handleDiscordReactionEvent(params) {
+ 		if (botUserId && user.id === botUserId) return;
+ 		const isGuildMessage = Boolean(data.guild_id);
+ 		const guildInfo = isGuildMessage ? resolveDiscordGuildEntry({
+-			guild: data.guild ?? void 0,
++			guild: data.guild ?? (data.guild_id ? { id: data.guild_id, name: void 0 } : void 0),
+ 			guildEntries
+ 		}) : null;
+ 		if (isGuildMessage && guildEntries && Object.keys(guildEntries).length > 0 && !guildInfo) return;
+@@ -23145,7 +23145,7 @@ async function preflightDiscordMessage(params) {
+ 		return null;
+ 	}
+ 	const guildInfo = isGuildMessage ? resolveDiscordGuildEntry({
+-		guild: params.data.guild ?? void 0,
++		guild: params.data.guild ?? (params.data.guild_id ? { id: params.data.guild_id, name: void 0 } : void 0),
+ 		guildEntries: params.guildEntries
+ 	}) : null;
+ 	logDebug(`[discord-preflight] guild_id=${params.data.guild_id} guild_obj=${!!params.data.guild} guild_obj_id=${params.data.guild?.id} guildInfo=${!!guildInfo} guildEntries=${params.guildEntries ? Object.keys(params.guildEntries).join(",") : "none"}`);
+@@ -23342,7 +23342,7 @@ async function preflightDiscordMessage(params) {
+ 	const systemText = resolveDiscordSystemEvent(message, resolveDiscordSystemLocation({
+ 		isDirectMessage,
+ 		isGroupDm,
+-		guild: params.data.guild ?? void 0,
++		guild: params.data.guild ?? (params.data.guild_id ? { id: params.data.guild_id, name: void 0 } : void 0),
+ 		channelName: channelName ?? messageChannelId
+ 	}));
+ 	if (systemText) {
+@@ -23893,7 +23893,7 @@ async function processDiscordMessage(ctx) {
+ 	});
+ 	if (statusReactionsEnabled) statusReactions.setQueued();
+ 	const fromLabel = isDirectMessage ? buildDirectLabel(author) : buildGuildLabel({
+-		guild: data.guild ?? void 0,
++		guild: data.guild ?? (data.guild_id ? { id: data.guild_id, name: void 0 } : void 0),
+ 		channelName: channelName ?? messageChannelId,
+ 		channelId: messageChannelId
+ 	});
+diff --git a/dist/reply-B4B0jUCM.js b/dist/reply-B4B0jUCM.js
+index fb3c80b413e0cec7b84e4a19a2aa62fa2b3feca6..14bfd8b1ec65aa7ec145130ed7ef8b8547ba39f2 100644
+--- a/dist/reply-B4B0jUCM.js
++++ b/dist/reply-B4B0jUCM.js
+@@ -12905,7 +12905,7 @@ async function handleDiscordReactionEvent(params) {
+ 		if (botUserId && user.id === botUserId) return;
+ 		const isGuildMessage = Boolean(data.guild_id);
+ 		const guildInfo = isGuildMessage ? resolveDiscordGuildEntry({
+-			guild: data.guild ?? void 0,
++			guild: data.guild ?? (data.guild_id ? { id: data.guild_id, name: void 0 } : void 0),
+ 			guildEntries
+ 		}) : null;
+ 		if (isGuildMessage && guildEntries && Object.keys(guildEntries).length > 0 && !guildInfo) return;
+@@ -13653,7 +13653,7 @@ async function preflightDiscordMessage(params) {
+ 		return null;
+ 	}
+ 	const guildInfo = isGuildMessage ? resolveDiscordGuildEntry({
+-		guild: params.data.guild ?? void 0,
++		guild: params.data.guild ?? (params.data.guild_id ? { id: params.data.guild_id, name: void 0 } : void 0),
+ 		guildEntries: params.guildEntries
+ 	}) : null;
+ 	logDebug(`[discord-preflight] guild_id=${params.data.guild_id} guild_obj=${!!params.data.guild} guild_obj_id=${params.data.guild?.id} guildInfo=${!!guildInfo} guildEntries=${params.guildEntries ? Object.keys(params.guildEntries).join(",") : "none"}`);
+@@ -13850,7 +13850,7 @@ async function preflightDiscordMessage(params) {
+ 	const systemText = resolveDiscordSystemEvent(message, resolveDiscordSystemLocation({
+ 		isDirectMessage,
+ 		isGroupDm,
+-		guild: params.data.guild ?? void 0,
++		guild: params.data.guild ?? (params.data.guild_id ? { id: params.data.guild_id, name: void 0 } : void 0),
+ 		channelName: channelName ?? messageChannelId
+ 	}));
+ 	if (systemText) {
+@@ -14490,7 +14490,7 @@ async function processDiscordMessage(ctx) {
+ 	});
+ 	if (statusReactionsEnabled) statusReactions.setQueued();
+ 	const fromLabel = isDirectMessage ? buildDirectLabel(author) : buildGuildLabel({
+-		guild: data.guild ?? void 0,
++		guild: data.guild ?? (data.guild_id ? { id: data.guild_id, name: void 0 } : void 0),
+ 		channelName: channelName ?? messageChannelId,
+ 		channelId: messageChannelId
+ 	});
+diff --git a/dist/subagent-registry-DOZpiiys.js b/dist/subagent-registry-DOZpiiys.js
+index 74a45ed966ea884ea45588c6c63b9666a2ca4bca..e0cbb4e51afb97734fdb1f7065319d9fbd53b0ba 100644
+--- a/dist/subagent-registry-DOZpiiys.js
++++ b/dist/subagent-registry-DOZpiiys.js
+@@ -37133,7 +37133,7 @@ async function handleDiscordReactionEvent(params) {
+ 		if (botUserId && user.id === botUserId) return;
+ 		const isGuildMessage = Boolean(data.guild_id);
+ 		const guildInfo = isGuildMessage ? resolveDiscordGuildEntry({
+-			guild: data.guild ?? void 0,
++			guild: data.guild ?? (data.guild_id ? { id: data.guild_id, name: void 0 } : void 0),
+ 			guildEntries
+ 		}) : null;
+ 		if (isGuildMessage && guildEntries && Object.keys(guildEntries).length > 0 && !guildInfo) return;
+@@ -37881,7 +37881,7 @@ async function preflightDiscordMessage(params) {
+ 		return null;
+ 	}
+ 	const guildInfo = isGuildMessage ? resolveDiscordGuildEntry({
+-		guild: params.data.guild ?? void 0,
++		guild: params.data.guild ?? (params.data.guild_id ? { id: params.data.guild_id, name: void 0 } : void 0),
+ 		guildEntries: params.guildEntries
+ 	}) : null;
+ 	logDebug(`[discord-preflight] guild_id=${params.data.guild_id} guild_obj=${!!params.data.guild} guild_obj_id=${params.data.guild?.id} guildInfo=${!!guildInfo} guildEntries=${params.guildEntries ? Object.keys(params.guildEntries).join(",") : "none"}`);
+@@ -38078,7 +38078,7 @@ async function preflightDiscordMessage(params) {
+ 	const systemText = resolveDiscordSystemEvent(message, resolveDiscordSystemLocation({
+ 		isDirectMessage,
+ 		isGroupDm,
+-		guild: params.data.guild ?? void 0,
++		guild: params.data.guild ?? (params.data.guild_id ? { id: params.data.guild_id, name: void 0 } : void 0),
+ 		channelName: channelName ?? messageChannelId
+ 	}));
+ 	if (systemText) {
+@@ -38516,7 +38516,7 @@ async function processDiscordMessage(ctx) {
+ 	});
+ 	if (statusReactionsEnabled) statusReactions.setQueued();
+ 	const fromLabel = isDirectMessage ? buildDirectLabel(author) : buildGuildLabel({
+-		guild: data.guild ?? void 0,
++		guild: data.guild ?? (data.guild_id ? { id: data.guild_id, name: void 0 } : void 0),
+ 		channelName: channelName ?? messageChannelId,
+ 		channelId: messageChannelId
+ 	});
