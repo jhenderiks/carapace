@@ -63,6 +63,7 @@ exec "$CHROMIUM_BIN" \
   --hide-crash-restore-bubble \
   --password-store=basic \
   --disable-blink-features=AutomationControlled \
+  --remote-debugging-address=0.0.0.0 \
   --remote-debugging-port="$CDP_PORT" \
   --user-data-dir="$USER_DATA" \
   about:blank
