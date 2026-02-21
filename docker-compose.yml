@@ -22,6 +22,8 @@ services:
     pids_limit: 1024
     init: true
     restart: unless-stopped
+    networks:
+      - carapace
 
   cli:
     build: .
@@ -43,3 +45,36 @@ services:
     stdin_open: true
     tty: true
     init: true
+
+  browser:
+    build: ./browser
+    container_name: openclaw-browser
+    volumes:
+      - browser-user-data:/home/chromium/user-data
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    shm_size: 512m
+    pids_limit: 256
+    init: true
+    restart: unless-stopped
+    networks:
+      - carapace
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+networks:
+  carapace:
+    name: carapace
+    ipam:
+      config:
+        - subnet: 172.19.0.0/16
+
+volumes:
+  browser-user-data:
