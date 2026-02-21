@@ -63,7 +63,8 @@ services:
     init: true
     restart: unless-stopped
     networks:
-      - carapace
+      carapace:
+        ipv4_address: 172.19.0.10
 
 networks:
   carapace:

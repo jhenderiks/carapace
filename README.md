@@ -66,13 +66,15 @@ The browser container starts automatically with `docker compose up`. Configure O
     "enabled": true,
     "profiles": {
       "openclaw": {
-        "cdpUrl": "http://browser:18800"
+        "cdpUrl": "http://172.19.0.10:18800"
       }
     },
     "defaultProfile": "openclaw"
   }
 }
 ```
+
+Note: The browser container is assigned a static IP (`172.19.0.10`) because Chromium's DevTools protocol rejects hostname-based `Host` headers for security reasons. Only IP addresses or `localhost` are accepted.
 
 **Why isolate the browser?** Chromium runs with `--no-sandbox` in containers, and CDP has no authentication. Without isolation, a compromised browser process or malicious CDP client can access the gateway's config, credentials, and workspace. The isolated container limits the blast radius to just the browser's own user-data directory.
 
@@ -265,7 +267,7 @@ The browser container exposes Chromium's CDP on port 18800. The gateway connects
     "enabled": true,
     "profiles": {
       "openclaw": {
-        "cdpUrl": "http://browser:18800"
+        "cdpUrl": "http://172.19.0.10:18800"
       }
     },
     "defaultProfile": "openclaw"
