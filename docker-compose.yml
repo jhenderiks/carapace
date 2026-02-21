@@ -60,14 +60,11 @@ services:
       - /tmp:rw,noexec,nosuid,size=64m
     shm_size: 512m
     pids_limit: 256
+    mem_limit: 1g
     init: true
     restart: unless-stopped
     networks:
       - carapace
-    deploy:
-      resources:
-        limits:
-          memory: 1G
 
 networks:
   carapace:
