@@ -45,9 +45,38 @@ The container image includes:
 | **Media** | ffmpeg, imagemagick, yt-dlp |
 | **Dev** | git, gh (GitHub CLI), ssh, python3, bun, typescript |
 | **Network** | curl, wget |
-| **Browser** | chromium (headless) |
 | **Coding Agents** | Claude Code, Codex, OpenCode |
 | **System** | trash-cli, unzip |
+
+### Optional: Isolated Browser Container
+
+Carapace includes an optional isolated browser container (`browser/`) that runs Chromium in a separate container with:
+
+- **Network isolation** — only CDP port exposed to gateway container
+- **No access to gateway config** — browser can't read OpenClaw config, credentials, or workspace
+- **Read-only root filesystem** — prevents persistent malware installation
+- **Memory limits** — prevents runaway processes
+- **Stale lock cleanup** — automatically clears `SingletonLock`/`SingletonCookie`/`SingletonSocket` on startup
+
+The browser container starts automatically with `docker compose up`. Configure OpenClaw to use it by setting the CDP URL in your config:
+
+```json
+{
+  "browser": {
+    "enabled": true,
+    "profiles": {
+      "openclaw": {
+        "cdpUrl": "http://172.20.0.10:18800"
+      }
+    },
+    "defaultProfile": "openclaw"
+  }
+}
+```
+
+Note: The browser container is assigned a static IP (`172.20.0.10`) because Chromium's DevTools protocol rejects hostname-based `Host` headers for security reasons. Only IP addresses or `localhost` are accepted.
+
+**Why isolate the browser?** Chromium runs with `--no-sandbox` in containers, and CDP has no authentication. Without isolation, a compromised browser process or malicious CDP client can access the gateway's config, credentials, and workspace. The isolated container limits the blast radius to just the browser's own user-data directory.
 
 ## Quick Start
 
@@ -196,7 +225,7 @@ networks:
     name: carapace
     ipam:
       config:
-        - subnet: 172.19.0.0/16
+        - subnet: 172.20.0.0/16
 
 services:
   gateway:
@@ -212,6 +241,42 @@ Consider keeping them in a dedicated git repository separate from carapace, then
 
 How you structure this is entirely up to you — the mounts are just directories.
 
+### Browser Configuration
+
+The browser container exposes Chromium's CDP on port 18800. The gateway connects to it via the `carapace` network.
+
+**Default (in-gateway browser):**
+
+```json
+{
+  "browser": {
+    "enabled": true,
+    "executablePath": "/usr/bin/chromium",
+    "headless": true,
+    "noSandbox": true,
+    "defaultProfile": "openclaw"
+  }
+}
+```
+
+**Isolated browser container:**
+
+```json
+{
+  "browser": {
+    "enabled": true,
+    "profiles": {
+      "openclaw": {
+        "cdpUrl": "http://172.20.0.10:18800"
+      }
+    },
+    "defaultProfile": "openclaw"
+  }
+}
+```
+
+The isolated browser automatically clears stale profile locks on startup, addressing the issue where unclean shutdowns leave `SingletonLock` files that block subsequent chromium launches.
+
 ## Security Model
 
 **What Carapace protects against:**
@@ -220,11 +285,25 @@ How you structure this is entirely up to you — the mounts are just directories
 - Resource exhaustion (pid limits, tmpfs size limits)
 - Accidental system modification
 - Persistent state leakage (tmpfs home wipes on restart)
+- Browser compromise spreading to gateway (when using isolated browser container)
 
 **What Carapace does NOT protect against:**
 - Network-based attacks (the agent has full network access)
 - Data exfiltration via mounted volumes
 - Malicious actions within the agent's granted permissions
+
+**Browser security:**
+
+By default, the gateway container runs Chromium directly with `--no-sandbox`. This means:
+- A compromised browser page can escape to the container
+- CDP (port 18800) has no authentication — any process in the container has full browser control
+- The browser runs with access to all gateway config and credentials
+
+The optional isolated browser container (`--profile browser`) addresses this:
+- Browser runs in a separate container with no access to `~/.openclaw`
+- Only CDP port is exposed to the gateway container
+- Memory limits prevent runaway processes
+- Compromised browser ≠ compromised gateway
 
 Carapace is defense-in-depth, not a sandbox. It reduces risk — it doesn't eliminate it. Always review your agent's capabilities and limit API key permissions where possible.
 
