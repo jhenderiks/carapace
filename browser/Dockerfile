@@ -12,6 +12,7 @@ RUN \
     chromium \
     ca-certificates \
     procps \
+    socat \
   && apt-get clean && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* \
   && getent group ${GID} >/dev/null || groupadd -g ${GID} chromium \
   && getent passwd ${UID} >/dev/null || useradd -m -u ${UID} -g ${GID} -s /bin/false chromium \
