@@ -14,6 +14,7 @@
     },
   },
   "patchedDependencies": {
+    "@mariozechner/pi-ai@0.53.0": "patches/@mariozechner+pi-ai@0.53.0.patch",
     "openclaw@2026.2.17": "patches/openclaw@2026.2.17.patch",
   },
   "packages": {
