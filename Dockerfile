@@ -17,6 +17,8 @@ RUN \
     gh \
     imagemagick \
     jq \
+    make \
+    g++ \
     python-is-python3 \
     python3 \
     python3-pip \
