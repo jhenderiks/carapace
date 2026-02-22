@@ -314,6 +314,7 @@ Carapace may ship patches for upstream dependencies when fixes haven't been rele
 | Package | Why |
 |---|---|
 | `openclaw` | Discord guild message routing fix |
+| `@discordjs/opus` | Force known-good prebuilt target on node24/trixie arm64 (avoid broken source-compile fallback) |
 
 These are applied automatically by Bun during `bun install`. When upstream releases include the fixes, the patches will be removed.
 
