@@ -11,10 +11,10 @@
     "up": "docker compose up"
   },
   "dependencies": {
-    "@anthropic-ai/claude-code": "2.1.45",
-    "@openai/codex": "0.101.0",
+    "@anthropic-ai/claude-code": "2.1.50",
+    "@openai/codex": "0.104.0",
     "openclaw": "2026.2.21-2",
-    "opencode-ai": "1.2.6",
+    "opencode-ai": "1.2.10",
     "typescript": "5.9.3"
   },
   "patchedDependencies": {
