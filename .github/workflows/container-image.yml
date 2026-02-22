@@ -122,20 +122,19 @@ jobs:
             echo "Trigger: add the \`publish-preview\` label to the PR."
           } >> "$GITHUB_STEP_SUMMARY"
 
-  publish-image:
-    name: Publish multi-arch image to GHCR (main/tags)
+  publish-image-amd64:
+    name: Publish amd64 image artifact (main/tags)
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-
-      - name: Set up QEMU (cross-platform emulation)
-        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
@@ -147,7 +146,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Generate image tags and OCI labels
+      - name: Generate image labels
         id: image-meta
         uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
         with:
@@ -158,14 +157,113 @@ jobs:
             type=ref,event=tag
             type=sha,format=short
 
-      - name: Build and push image
+      - name: Build and push amd64 image artifact
+        id: build
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: .
           file: ./Dockerfile
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: true
-          tags: ${{ steps.image-meta.outputs.tags }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_REPOSITORY }}:build-${{ github.sha }}-amd64
           labels: ${{ steps.image-meta.outputs.labels }}
-          cache-from: type=gha,scope=container-image-publish
-          cache-to: type=gha,mode=max,scope=container-image-publish
+          cache-from: type=gha,scope=container-image-publish-amd64
+          cache-to: type=gha,mode=max,scope=container-image-publish-amd64
+
+  publish-image-arm64:
+    name: Publish arm64 image artifact (main/tags)
+    if: github.event_name == 'push'
+    runs-on: ubuntu-24.04-arm
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - name: Authenticate to GHCR
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate image labels
+        id: image-meta
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_REPOSITORY }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=branch
+            type=ref,event=tag
+            type=sha,format=short
+
+      - name: Build and push arm64 image artifact
+        id: build
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/arm64
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_REPOSITORY }}:build-${{ github.sha }}-arm64
+          labels: ${{ steps.image-meta.outputs.labels }}
+          cache-from: type=gha,scope=container-image-publish-arm64
+          cache-to: type=gha,mode=max,scope=container-image-publish-arm64
+
+  publish-image-manifest:
+    name: Publish multi-arch image tags (main/tags)
+    if: github.event_name == 'push'
+    needs:
+      - publish-image-amd64
+      - publish-image-arm64
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Authenticate to GHCR
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - name: Generate release tags
+        id: image-meta
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_REPOSITORY }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=branch
+            type=ref,event=tag
+            type=sha,format=short
+
+      - name: Create and push multi-arch manifests
+        env:
+          IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_REPOSITORY }}
+          AMD64_DIGEST: ${{ needs.publish-image-amd64.outputs.digest }}
+          ARM64_DIGEST: ${{ needs.publish-image-arm64.outputs.digest }}
+          TAGS: ${{ steps.image-meta.outputs.tags }}
+        run: |
+          set -euo pipefail
+          while IFS= read -r TAG; do
+            [ -z "$TAG" ] && continue
+            echo "Publishing manifest: $TAG"
+            docker buildx imagetools create \
+              --tag "$TAG" \
+              "${IMAGE}@${AMD64_DIGEST}" \
+              "${IMAGE}@${ARM64_DIGEST}"
+          done <<< "$TAGS"
