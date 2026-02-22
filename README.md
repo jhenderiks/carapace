@@ -245,19 +245,9 @@ How you structure this is entirely up to you — the mounts are just directories
 
 The browser container exposes Chromium's CDP on port 18800. The gateway connects to it via the `carapace` network.
 
-**Default (in-gateway browser):**
+**Default (recommended): isolated browser container**
 
-```json
-{
-  "browser": {
-    "enabled": true,
-    "executablePath": "/usr/bin/chromium",
-    "headless": true,
-    "noSandbox": true,
-    "defaultProfile": "openclaw"
-  }
-}
-```
+The gateway image does **not** include Chromium. Use the separate `browser` service and connect over CDP:
 
 **Isolated browser container:**
 
@@ -294,12 +284,12 @@ The isolated browser automatically clears stale profile locks on startup, addres
 
 **Browser security:**
 
-By default, the gateway container runs Chromium directly with `--no-sandbox`. This means:
-- A compromised browser page can escape to the container
-- CDP (port 18800) has no authentication — any process in the container has full browser control
-- The browser runs with access to all gateway config and credentials
+If you choose to run Chromium directly in the gateway container (custom image), note the risks:
+- A compromised browser page can escape to the gateway container
+- CDP (port 18800) has no authentication — any process in the container can control the browser
+- The browser would run with access to gateway config and credentials
 
-The optional isolated browser container (`--profile browser`) addresses this:
+Carapace's default setup uses the isolated `browser` container to reduce that risk:
 - Browser runs in a separate container with no access to `~/.openclaw`
 - Only CDP port is exposed to the gateway container
 - Memory limits prevent runaway processes
