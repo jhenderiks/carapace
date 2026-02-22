@@ -7,7 +7,6 @@ RUN \
   && apt-get install -y --no-install-recommends \
     bat \
     ca-certificates \
-    chromium \
     curl \
     eza \
     fd-find \
