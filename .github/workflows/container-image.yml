@@ -2,6 +2,11 @@ name: Container Image Pipeline
 
 on:
   pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - labeled
     branches:
       - main
     paths:
@@ -33,7 +38,7 @@ env:
 jobs:
   validate-image:
     name: Validate image build (${{ matrix.platform_name }})
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && github.event.action != 'labeled'
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -47,7 +52,6 @@ jobs:
             platform_name: arm64
     permissions:
       contents: read
-      packages: write
 
     steps:
       - name: Checkout repository
@@ -56,35 +60,33 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
-      - name: Authenticate to GHCR for PR image publishing (same-repo PRs only)
-        if: github.event.pull_request.head.repo.full_name == github.repository
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build PR image (push on same-repo PRs)
+      - name: Build image for validation (no push)
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: .
           file: ./Dockerfile
           platforms: ${{ matrix.platform }}
-          push: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_REPOSITORY }}:pr-${{ github.event.pull_request.number }}-${{ matrix.platform_name }}
+          push: false
           cache-from: type=gha,scope=container-image-validate-${{ matrix.platform_name }}
           cache-to: type=gha,mode=max,scope=container-image-validate-${{ matrix.platform_name }}
 
-  publish-pr-image:
-    name: Publish PR multi-arch manifest
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
-    needs: validate-image
+  publish-pr-preview:
+    name: Publish on-demand PR preview image
+    if: github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'publish-preview' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
 
     steps:
+      - name: Checkout PR head commit
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Set up QEMU (cross-platform emulation)
+        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
@@ -95,25 +97,29 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create PR multi-arch manifest tag
-        run: |
-          set -euo pipefail
-          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_REPOSITORY }}"
-          PR_TAG="pr-${{ github.event.pull_request.number }}"
-
-          docker buildx imagetools create \
-            --tag "${IMAGE}:${PR_TAG}" \
-            "${IMAGE}:${PR_TAG}-amd64" \
-            "${IMAGE}:${PR_TAG}-arm64"
+      - name: Build and push PR preview image
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_REPOSITORY }}:pr-${{ github.event.pull_request.number }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_REPOSITORY }}:pr-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}
+          cache-from: type=gha,scope=container-image-pr-preview
+          cache-to: type=gha,mode=max,scope=container-image-pr-preview
 
       - name: Add pull command to workflow summary
         run: |
           IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_REPOSITORY }}"
           PR_TAG="pr-${{ github.event.pull_request.number }}"
           {
-            echo "### Pull this PR image"
+            echo "### Pull this PR preview image"
             echo ""
             echo "\`docker pull ${IMAGE}:${PR_TAG}\`"
+            echo ""
+            echo "Trigger: add the \`publish-preview\` label to the PR."
           } >> "$GITHUB_STEP_SUMMARY"
 
   publish-image:
