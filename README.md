@@ -314,7 +314,6 @@ Carapace may ship patches for upstream dependencies when fixes haven't been rele
 | Package | Why |
 |---|---|
 | `openclaw` | Discord guild message routing fix |
-| `undici` | HTTP client fix |
 
 These are applied automatically by Bun during `bun install`. When upstream releases include the fixes, the patches will be removed.
 
