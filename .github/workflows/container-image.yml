@@ -47,6 +47,7 @@ jobs:
             platform_name: arm64
     permissions:
       contents: read
+      packages: write
 
     steps:
       - name: Checkout repository
