@@ -1,4 +1,4 @@
-FROM node:lts-trixie-slim
+FROM node:24-trixie-slim
 
 EXPOSE 18789
 
