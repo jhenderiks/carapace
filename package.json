@@ -18,6 +18,7 @@
     "typescript": "5.9.3"
   },
   "patchedDependencies": {
-    "openclaw@2026.2.21-2": "patches/openclaw@2026.2.21-2.patch"
+    "openclaw@2026.2.21-2": "patches/openclaw@2026.2.21-2.patch",
+    "@discordjs/opus@0.10.0": "patches/@discordjs+opus@0.10.0.patch"
   }
 }

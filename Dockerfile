@@ -1,6 +1,4 @@
-# Pin Node 22 on bullseye so @discordjs/opus can use prebuilt arm64 binaries
-# (node 24 + glibc 2.41 falls back to source builds, which currently fail).
-FROM node:22-bullseye-slim
+FROM node:lts-trixie-slim
 
 EXPOSE 18789
 
