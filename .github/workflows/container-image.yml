@@ -55,15 +55,65 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
-      - name: Build image for validation (no push)
+      - name: Authenticate to GHCR for PR image publishing (same-repo PRs only)
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build PR image (push on same-repo PRs)
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: .
           file: ./Dockerfile
           platforms: ${{ matrix.platform }}
-          push: false
+          push: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_REPOSITORY }}:pr-${{ github.event.pull_request.number }}-${{ matrix.platform_name }}
           cache-from: type=gha,scope=container-image-validate-${{ matrix.platform_name }}
           cache-to: type=gha,mode=max,scope=container-image-validate-${{ matrix.platform_name }}
+
+  publish-pr-image:
+    name: Publish PR multi-arch manifest
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    needs: validate-image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - name: Authenticate to GHCR
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create PR multi-arch manifest tag
+        run: |
+          set -euo pipefail
+          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_REPOSITORY }}"
+          PR_TAG="pr-${{ github.event.pull_request.number }}"
+
+          docker buildx imagetools create \
+            --tag "${IMAGE}:${PR_TAG}" \
+            "${IMAGE}:${PR_TAG}-amd64" \
+            "${IMAGE}:${PR_TAG}-arm64"
+
+      - name: Add pull command to workflow summary
+        run: |
+          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_REPOSITORY }}"
+          PR_TAG="pr-${{ github.event.pull_request.number }}"
+          {
+            echo "### Pull this PR image"
+            echo ""
+            echo "\`docker pull ${IMAGE}:${PR_TAG}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
 
   publish-image:
     name: Publish multi-arch image to GHCR (main/tags)
