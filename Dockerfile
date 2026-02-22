@@ -13,12 +13,12 @@ RUN \
     fd-find \
     ffmpeg \
     fzf \
+    g++ \
     git \
     gh \
     imagemagick \
     jq \
     make \
-    g++ \
     python-is-python3 \
     python3 \
     python3-pip \
