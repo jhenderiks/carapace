@@ -1,0 +1,16 @@
+diff --git a/package.json b/package.json
+index 3026325..f15b1a4 100644
+--- a/package.json
++++ b/package.json
+@@ -45,9 +45,9 @@
+ 	},
+ 	"binary": {
+ 		"module_name": "opus",
+-		"module_path": "./prebuild/{node_abi}-napi-v{napi_build_version}-{platform}-{arch}-{libc}-{libc_version}/",
++		"module_path": "./prebuild/node-v127-napi-v{napi_build_version}-{platform}-{arch}-{libc}-2.35/",
+ 		"remote_path": "v{version}",
+-		"package_name": "{module_name}-v{version}-{node_abi}-napi-v{napi_build_version}-{platform}-{arch}-{libc}-{libc_version}.tar.gz",
++		"package_name": "{module_name}-v{version}-node-v127-napi-v{napi_build_version}-{platform}-{arch}-{libc}-2.35.tar.gz",
+ 		"host": "https://github.com/discordjs/opus/releases/download/",
+ 		"napi_versions": [
+ 			3
