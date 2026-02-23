@@ -304,7 +304,6 @@ Carapace may ship patches for upstream dependencies when fixes haven't been rele
 | Package | Patch file | Why |
 |---|---|---|
 | `openclaw@2026.2.22-2` | `patches/openclaw@2026.2.22-2.patch` | Discord `guild_id` fallback when Discord payloads omit the full `guild` object |
-| `@discordjs/opus@0.10.0` | `patches/@discordjs+opus@0.10.0.patch` | Force known-good prebuilt target on node24/trixie arm64 (avoid broken source-compile fallback) |
 
 These are applied automatically by Bun during `bun install`. When upstream releases include the fixes, the patches will be removed.
 
