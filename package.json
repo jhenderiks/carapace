@@ -13,12 +13,12 @@
   "dependencies": {
     "@anthropic-ai/claude-code": "2.1.50",
     "@openai/codex": "0.104.0",
-    "openclaw": "2026.2.21-2",
+    "openclaw": "2026.2.22-2",
     "opencode-ai": "1.2.10",
     "typescript": "5.9.3"
   },
   "patchedDependencies": {
-    "openclaw@2026.2.21-2": "patches/openclaw@2026.2.21-2.patch",
+    "openclaw@2026.2.22-2": "patches/openclaw@2026.2.22-2.patch",
     "@discordjs/opus@0.10.0": "patches/@discordjs+opus@0.10.0.patch"
   }
 }
