@@ -12,6 +12,7 @@ Carapace wraps OpenClaw in a security-focused container with sensible defaults: 
 - [Architecture](#architecture)
 - [Customization](#customization)
   - [UID/GID and Permissions](#uidgid-and-permissions)
+  - [Architecture (sqlite-vec)](#architecture-sqlite-vec)
   - [Adding Tools](#adding-tools)
   - [Extending the Compose](#extending-the-compose)
   - [Additional Home Directory Mounts](#additional-home-directory-mounts)
@@ -161,6 +162,10 @@ services:
 ```
 
 Then rebuild: `docker compose build`
+
+### Architecture (sqlite-vec)
+
+The image symlinks the platform-specific `sqlite-vec` native extension at build time using Docker's built-in `TARGETARCH` argument (`amd64` → `x64`, `arm64` → `arm64`). Multi-platform builds work without any extra configuration.
 
 ### Adding Tools
 
