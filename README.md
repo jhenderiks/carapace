@@ -45,7 +45,6 @@ The container image includes:
 | **Media** | ffmpeg, imagemagick, yt-dlp |
 | **Dev** | git, gh (GitHub CLI), ssh, python3, bun, typescript |
 | **Network** | curl, wget |
-| **Coding Agents** | Claude Code, Codex, OpenCode |
 | **System** | trash-cli, unzip |
 
 ### Optional: Isolated Browser Container
@@ -208,7 +207,6 @@ The base compose leaves most of `/home/openclaw` as ephemeral tmpfs — it reset
 |---|---|
 | `~/.ssh:/home/openclaw/.ssh:rw` | SSH keys for git, remote access |
 | `~/.gitconfig:/home/openclaw/.gitconfig:rw` | Git identity and config |
-| `~/.codex:/home/openclaw/.codex:rw` | Codex agent configuration |
 | `~/.node-llama-cpp:/home/openclaw/.node-llama-cpp:rw` | Local LLM model files |
 | `/your/path:/mnt:rw` | Persistent workspace volume for repos, data, etc. |
 
