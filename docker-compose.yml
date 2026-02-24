@@ -1,4 +1,5 @@
 services:
+
   gateway:
     build: .
     container_name: openclaw
