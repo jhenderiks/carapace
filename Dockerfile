@@ -53,6 +53,8 @@ RUN \
   && pip install --break-system-packages yt-dlp \
   # install bun
   && npm i -g bun \
+  # install rtk
+  && curl -fsSL https://github.com/rtk-ai/rtk/releases/download/v0.22.2/rtk-aarch64-unknown-linux-gnu.tar.gz | tar xz -C /usr/local/bin rtk \
   # fix sqlite-vec linking issue
   && mkdir -p /usr/local/lib/sqlite-vec \
   && ln -s ${APP}/node_modules/sqlite-vec-linux-x64/vec0.so /usr/local/lib/sqlite-vec/vec0.so \

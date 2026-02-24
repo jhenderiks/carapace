@@ -1,0 +1,9 @@
+#!/bin/sh
+if [ -n "$_RTK_WRAP" ]; then
+  PATH="${PATH#/opt/rtk:}"; export PATH; exec git "$@"
+fi
+case "$1" in
+  status|diff|log|add|commit|push|pull|branch|fetch|stash|show)
+    export _RTK_WRAP=1; exec rtk git "$@" ;;
+  *) PATH="${PATH#/opt/rtk:}"; export PATH; exec git "$@" ;;
+esac

@@ -6,6 +6,7 @@ services:
     env_file:
       - .env
     volumes:
+      - ./rtk:/opt/rtk:ro
       - ./config:/home/openclaw/.openclaw:rw
       - ./workspace:/home/openclaw/.openclaw/workspace:rw
     ports:

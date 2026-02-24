@@ -1,0 +1,13 @@
+#!/bin/sh
+if [ -n "$_RTK_WRAP" ]; then
+  PATH="${PATH#/opt/rtk:}"; export PATH; exec pnpm "$@"
+fi
+case "$1" in
+  test)       shift; export _RTK_WRAP=1; exec rtk vitest run "$@" ;;
+  tsc)        shift; export _RTK_WRAP=1; exec rtk tsc "$@" ;;
+  lint)       shift; export _RTK_WRAP=1; exec rtk lint "$@" ;;
+  playwright) shift; export _RTK_WRAP=1; exec rtk playwright "$@" ;;
+  list|ls|outdated)
+    export _RTK_WRAP=1; exec rtk pnpm "$@" ;;
+  *) PATH="${PATH#/opt/rtk:}"; export PATH; exec pnpm "$@" ;;
+esac

@@ -1,0 +1,9 @@
+#!/bin/sh
+# rtk wrapper: next → rtk next
+if [ -n "$_RTK_WRAP" ]; then
+  PATH="${PATH#/opt/rtk:}"
+  export PATH
+  exec next "$@"
+fi
+export _RTK_WRAP=1
+exec rtk next "$@"

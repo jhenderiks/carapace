@@ -1,0 +1,14 @@
+#!/bin/sh
+if [ -n "$_RTK_WRAP" ]; then
+  PATH="${PATH#/opt/rtk:}"; export PATH; exec npx "$@"
+fi
+case "$1" in
+  vitest)     shift; export _RTK_WRAP=1; exec rtk vitest run "$@" ;;
+  vue-tsc)    shift; export _RTK_WRAP=1; exec rtk tsc "$@" ;;
+  tsc)        shift; export _RTK_WRAP=1; exec rtk tsc "$@" ;;
+  eslint)     shift; export _RTK_WRAP=1; exec rtk lint "$@" ;;
+  prettier)   shift; export _RTK_WRAP=1; exec rtk prettier "$@" ;;
+  playwright) shift; export _RTK_WRAP=1; exec rtk playwright "$@" ;;
+  prisma)     shift; export _RTK_WRAP=1; exec rtk prisma "$@" ;;
+  *) PATH="${PATH#/opt/rtk:}"; export PATH; exec npx "$@" ;;
+esac

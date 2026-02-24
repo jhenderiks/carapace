@@ -1,0 +1,9 @@
+#!/bin/sh
+if [ -n "$_RTK_WRAP" ]; then
+  PATH="${PATH#/opt/rtk:}"; export PATH; exec docker "$@"
+fi
+case "$1" in
+  compose|ps|images|logs|run|build|exec)
+    export _RTK_WRAP=1; exec rtk docker "$@" ;;
+  *) PATH="${PATH#/opt/rtk:}"; export PATH; exec docker "$@" ;;
+esac

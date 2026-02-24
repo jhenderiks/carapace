@@ -1,0 +1,9 @@
+#!/bin/sh
+if [ -n "$_RTK_WRAP" ]; then
+  PATH="${PATH#/opt/rtk:}"; export PATH; exec gh "$@"
+fi
+case "$1" in
+  pr|issue|run|api|release)
+    export _RTK_WRAP=1; exec rtk gh "$@" ;;
+  *) PATH="${PATH#/opt/rtk:}"; export PATH; exec gh "$@" ;;
+esac

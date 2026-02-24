@@ -1,0 +1,9 @@
+#!/bin/sh
+if [ -n "$_RTK_WRAP" ]; then
+  PATH="${PATH#/opt/rtk:}"; export PATH; exec go "$@"
+fi
+case "$1" in
+  test|build|vet)
+    export _RTK_WRAP=1; exec rtk go "$@" ;;
+  *) PATH="${PATH#/opt/rtk:}"; export PATH; exec go "$@" ;;
+esac

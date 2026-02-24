@@ -1,0 +1,9 @@
+#!/bin/sh
+if [ -n "$_RTK_WRAP" ]; then
+  PATH="${PATH#/opt/rtk:}"; export PATH; exec cargo "$@"
+fi
+case "$1" in
+  test|build|clippy|check|install|nextest|fmt)
+    export _RTK_WRAP=1; exec rtk cargo "$@" ;;
+  *) PATH="${PATH#/opt/rtk:}"; export PATH; exec cargo "$@" ;;
+esac
