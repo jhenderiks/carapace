@@ -7,6 +7,7 @@ services:
       - .env
     volumes:
       - ./rtk:/opt/rtk:ro
+      - ./rtk-data:/home/openclaw/.local/share/rtk:rw
       - ./config:/home/openclaw/.openclaw:rw
       - ./workspace:/home/openclaw/.openclaw/workspace:rw
     ports:
