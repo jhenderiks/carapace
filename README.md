@@ -17,6 +17,7 @@ Carapace wraps OpenClaw in a security-focused container with sensible defaults: 
   - [Additional Home Directory Mounts](#additional-home-directory-mounts)
   - [Named Network](#named-network)
   - [Versioning Your Workspace](#versioning-your-workspace)
+  - [RTK Token Compression](#rtk-token-compression)
 - [Security Model](#security-model)
 - [Patches](#patches)
 - [License](#license)
@@ -45,6 +46,7 @@ The container image includes:
 | **Media** | ffmpeg, imagemagick, yt-dlp |
 | **Dev** | git, gh (GitHub CLI), ssh, python3, bun, typescript |
 | **Network** | curl, wget |
+| **Token Optimization** | [rtk](https://github.com/rtk-ai/rtk) (with selective shell wrappers) |
 | **System** | trash-cli, unzip |
 
 ### Optional: Isolated Browser Container
@@ -208,6 +210,7 @@ The base compose leaves most of `/home/openclaw` as ephemeral tmpfs — it reset
 | `~/.ssh:/home/openclaw/.ssh:rw` | SSH keys for git, remote access |
 | `~/.gitconfig:/home/openclaw/.gitconfig:rw` | Git identity and config |
 | `~/.node-llama-cpp:/home/openclaw/.node-llama-cpp:rw` | Local LLM model files |
+| `./rtk-data:/home/openclaw/.local/share/rtk:rw` | rtk token savings history (optional) |
 | `/your/path:/mnt:rw` | Persistent workspace volume for repos, data, etc. |
 
 These are all optional — only add what your use case actually needs.
@@ -264,6 +267,46 @@ The gateway image does **not** include Chromium. Use the separate `browser` serv
 ```
 
 The isolated browser automatically clears stale profile locks on startup, addressing the issue where unclean shutdowns leave `SingletonLock` files that block subsequent chromium launches.
+
+### RTK Token Compression
+
+[rtk](https://github.com/rtk-ai/rtk) is a CLI proxy that compresses shell command output before it reaches the LLM context, reducing token usage by 40-90% on common operations (git, ls, grep, etc.).
+
+Carapace includes rtk and a set of selective shell wrappers (`rtk/`) that are mounted at `/opt/rtk`. When OpenClaw's `tools.exec.pathPrepend` config points at this directory, agent-initiated commands are transparently routed through rtk — the LLM only ever sees compressed output.
+
+**How it works:**
+
+1. OpenClaw prepends `/opt/rtk` to `PATH` for `exec` tool calls only (not the container's global `PATH`)
+2. Each wrapper script intercepts specific subcommands that rtk handles well
+3. Unrecognized subcommands/flags pass through to the real binary
+4. A recursion guard (`_RTK_WRAP` env var) prevents infinite loops when rtk internally calls the real binary
+
+**Selective routing** — wrappers only intercept known-good subcommands, matching the patterns from [rtk's official Claude Code hook](https://github.com/rtk-ai/rtk/blob/master/.claude/hooks/rtk-rewrite.sh). For example, `git status` routes through rtk, but `git clone` passes through to the real binary.
+
+**Non-obvious mappings:**
+
+| Command | Routes to | Why |
+|---|---|---|
+| `cat file` | `rtk read file` | rtk's file reader with intelligent filtering |
+| `rg pattern` | `rtk grep pattern` | ripgrep → rtk's compact grep |
+| `eslint` | `rtk lint` | rtk's lint formatter |
+| `head -N file` | `rtk read file --max-lines N` | Only when a file arg is present (piped `head` passes through) |
+
+**Configuration** — add the following to your OpenClaw config and restart the gateway:
+
+```json
+{
+  "tools": {
+    "exec": {
+      "pathPrepend": ["/opt/rtk"]
+    }
+  }
+}
+```
+
+**Why `pathPrepend` instead of container `PATH`?** `pathPrepend` only affects agent-initiated `exec` tool calls. Container-internal processes (OpenClaw itself, git hooks, npm scripts) still use the real binaries. This avoids subtle breakage in non-LLM contexts where compressed output would be wrong.
+
+**Tracking savings:** rtk records token savings in a SQLite database at `~/.local/share/rtk/history.db`. Run `rtk gain` inside the container to see cumulative stats, or `rtk gain --graph` for a daily breakdown. To persist this across restarts, bind-mount the directory (e.g., `./rtk-data:/home/openclaw/.local/share/rtk:rw`).
 
 ## Security Model
 
