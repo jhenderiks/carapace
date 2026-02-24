@@ -38,7 +38,8 @@ RUN \
 #     nmap \
 #     traceroute
 
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
+# install uv
+COPY --from=astral/uv:0.10.5 /uv /uvx /usr/local/bin/
 
 ARG UID=1000
 ARG GID=1000
