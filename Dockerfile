@@ -41,8 +41,6 @@ RUN \
 # install uv
 COPY --from=astral/uv:0.10.5 /uv /uvx /usr/local/bin/
 
-ARG TARGETARCH=amd64
-
 ARG UID=1000
 ARG GID=1000
 
@@ -59,9 +57,10 @@ RUN \
   # install rtk
   && curl -fsSL https://github.com/rtk-ai/rtk/releases/download/v0.22.2/rtk-aarch64-unknown-linux-gnu.tar.gz | tar xz -C /usr/local/bin rtk \
   # fix sqlite-vec linking issue
-  # map TARGETARCH to sqlite-vec platform suffix (amd64 → x64, arm64 → arm64)
+  # detect arch at runtime so native arm64 builds don't default to x64
+  # dpkg --print-architecture returns amd64 or arm64; sqlite-vec uses x64 for amd64
   && mkdir -p /usr/local/lib/sqlite-vec \
-  && SQLITE_ARCH="$([ "${TARGETARCH}" = "amd64" ] && echo "x64" || echo "${TARGETARCH}")" \
+  && SQLITE_ARCH="$(dpkg --print-architecture | sed 's/amd64/x64/')" \
   && ln -s ${APP}/node_modules/sqlite-vec-linux-${SQLITE_ARCH}/vec0.so /usr/local/lib/sqlite-vec/vec0.so \
   # add user & group if not exists
   && getent group ${GID} >/dev/null || groupadd -g ${GID} openclaw \
