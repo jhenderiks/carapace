@@ -80,6 +80,7 @@ WORKDIR ${APP}
 
 COPY --chown=${UID}:${GID} bun.lock package.json .
 COPY --chown=${UID}:${GID} patches patches
+COPY --chown=${UID}:${GID} rtk /opt/rtk
 
 RUN bun i --frozen-lockfile \
   # OpenClaw blocks world-writable plugin files; normalize modes after install
