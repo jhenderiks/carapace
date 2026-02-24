@@ -41,7 +41,10 @@ RUN \
 # install uv
 COPY --from=astral/uv:0.10.5 /uv /uvx /usr/local/bin/
 
-ARG ARCH=x64
+ARG TARGETARCH=amd64
+# ARCH overrides the sqlite-vec platform suffix (x64, arm64). When omitted,
+# it is derived from TARGETARCH automatically (amd64 → x64, arm64 → arm64).
+ARG ARCH
 
 ARG UID=1000
 ARG GID=1000
@@ -59,8 +62,10 @@ RUN \
   # install rtk
   && curl -fsSL https://github.com/rtk-ai/rtk/releases/download/v0.22.2/rtk-aarch64-unknown-linux-gnu.tar.gz | tar xz -C /usr/local/bin rtk \
   # fix sqlite-vec linking issue
+  # derive arch suffix: ARCH overrides; otherwise map TARGETARCH (amd64 → x64, arm64 → arm64)
   && mkdir -p /usr/local/lib/sqlite-vec \
-  && ln -s ${APP}/node_modules/sqlite-vec-linux-${ARCH}/vec0.so /usr/local/lib/sqlite-vec/vec0.so \
+  && SQLITE_ARCH="${ARCH:-$([ "${TARGETARCH}" = "amd64" ] && echo "x64" || echo "${TARGETARCH}")}" \
+  && ln -s ${APP}/node_modules/sqlite-vec-linux-${SQLITE_ARCH}/vec0.so /usr/local/lib/sqlite-vec/vec0.so \
   # add user & group if not exists
   && getent group ${GID} >/dev/null || groupadd -g ${GID} openclaw \
   && getent passwd ${UID} >/dev/null || useradd -m -u ${UID} -g ${GID} openclaw \
