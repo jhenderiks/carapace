@@ -272,7 +272,7 @@ The isolated browser automatically clears stale profile locks on startup, addres
 
 [rtk](https://github.com/rtk-ai/rtk) is a CLI proxy that compresses shell command output before it reaches the LLM context, reducing token usage by 40-90% on common operations (git, ls, grep, etc.).
 
-Carapace includes rtk and a set of selective shell wrappers (`rtk/`) that are mounted at `/opt/rtk`. When OpenClaw's `tools.exec.pathPrepend` config points at this directory, agent-initiated commands are transparently routed through rtk — the LLM only ever sees compressed output.
+Carapace includes rtk and a set of selective shell wrappers (`rtk/`) that are baked into the image at `/opt/rtk`. When OpenClaw's `tools.exec.pathPrepend` config points at this directory, agent-initiated commands are transparently routed through rtk — the LLM only ever sees compressed output.
 
 **How it works:**
 

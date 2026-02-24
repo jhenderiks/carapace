@@ -38,7 +38,8 @@ RUN \
 #     nmap \
 #     traceroute
 
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
+# install uv
+COPY --from=astral/uv:0.10.5 /uv /uvx /usr/local/bin/
 
 ARG UID=1000
 ARG GID=1000
@@ -80,6 +81,7 @@ WORKDIR ${APP}
 
 COPY --chown=${UID}:${GID} bun.lock package.json .
 COPY --chown=${UID}:${GID} patches patches
+COPY --chown=${UID}:${GID} rtk /opt/rtk
 
 RUN bun i --frozen-lockfile \
   # OpenClaw blocks world-writable plugin files; normalize modes after install
