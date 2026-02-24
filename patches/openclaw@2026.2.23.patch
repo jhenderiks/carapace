@@ -1,8 +1,8 @@
-diff --git a/dist/pi-embedded-CZp-Kzhd.js b/dist/pi-embedded-CZp-Kzhd.js
-index 1a9e6daf6a307975724515dd97b1debdac52e882..611e0d499be90224148880d01e4a15240141f3e1 100644
---- a/dist/pi-embedded-CZp-Kzhd.js
-+++ b/dist/pi-embedded-CZp-Kzhd.js
-@@ -46166,7 +46166,7 @@ async function handleDiscordReactionEvent(params) {
+diff --git a/dist/pi-embedded-54x4PM3A.js b/dist/pi-embedded-54x4PM3A.js
+index a9694e9869e169f4d1a63e6cfc04f1fd976bb012..9417e7ea90426ceb2b44b6502b4ec36200c5e7d5 100644
+--- a/dist/pi-embedded-54x4PM3A.js
++++ b/dist/pi-embedded-54x4PM3A.js
+@@ -46891,7 +46891,7 @@ async function handleDiscordReactionEvent(params) {
  		if (botUserId && user.id === botUserId) return;
  		const isGuildMessage = Boolean(data.guild_id);
  		const guildInfo = isGuildMessage ? resolveDiscordGuildEntry({
@@ -11,7 +11,7 @@ index 1a9e6daf6a307975724515dd97b1debdac52e882..611e0d499be90224148880d01e4a1524
  			guildEntries
  		}) : null;
  		if (isGuildMessage && guildEntries && Object.keys(guildEntries).length > 0 && !guildInfo) return;
-@@ -47009,7 +47009,7 @@ async function preflightDiscordMessage(params) {
+@@ -47743,7 +47743,7 @@ async function preflightDiscordMessage(params) {
  		return null;
  	}
  	const guildInfo = isGuildMessage ? resolveDiscordGuildEntry({
@@ -20,7 +20,7 @@ index 1a9e6daf6a307975724515dd97b1debdac52e882..611e0d499be90224148880d01e4a1524
  		guildEntries: params.guildEntries
  	}) : null;
  	logDebug(`[discord-preflight] guild_id=${params.data.guild_id} guild_obj=${!!params.data.guild} guild_obj_id=${params.data.guild?.id} guildInfo=${!!guildInfo} guildEntries=${params.guildEntries ? Object.keys(params.guildEntries).join(",") : "none"}`);
-@@ -47211,7 +47211,7 @@ async function preflightDiscordMessage(params) {
+@@ -47946,7 +47946,7 @@ async function preflightDiscordMessage(params) {
  	const systemText = resolveDiscordSystemEvent(message, resolveDiscordSystemLocation({
  		isDirectMessage,
  		isGroupDm,
@@ -29,7 +29,7 @@ index 1a9e6daf6a307975724515dd97b1debdac52e882..611e0d499be90224148880d01e4a1524
  		channelName: channelName ?? messageChannelId
  	}));
  	if (systemText) {
-@@ -48457,7 +48457,7 @@ async function processDiscordMessage(ctx) {
+@@ -49192,7 +49192,7 @@ async function processDiscordMessage(ctx) {
  	});
  	if (statusReactionsEnabled) statusReactions.setQueued();
  	const fromLabel = isDirectMessage ? buildDirectLabel(author) : buildGuildLabel({
@@ -38,11 +38,11 @@ index 1a9e6daf6a307975724515dd97b1debdac52e882..611e0d499be90224148880d01e4a1524
  		channelName: channelName ?? messageChannelId,
  		channelId: messageChannelId
  	});
-diff --git a/dist/pi-embedded-Vt2x_Jl3.js b/dist/pi-embedded-Vt2x_Jl3.js
-index e072ac1e772687a01160cdde690e70435a4b3761..a825fedb17e8f4b1381eadbcdf479723b4431065 100644
---- a/dist/pi-embedded-Vt2x_Jl3.js
-+++ b/dist/pi-embedded-Vt2x_Jl3.js
-@@ -46164,7 +46164,7 @@ async function handleDiscordReactionEvent(params) {
+diff --git a/dist/pi-embedded-CWNyms-S.js b/dist/pi-embedded-CWNyms-S.js
+index 19e6650ec508343a9c585ff7b97a1d6e712804c6..9ec60a0ba11811f1b377a11b93499a4a905ed48b 100644
+--- a/dist/pi-embedded-CWNyms-S.js
++++ b/dist/pi-embedded-CWNyms-S.js
+@@ -46889,7 +46889,7 @@ async function handleDiscordReactionEvent(params) {
  		if (botUserId && user.id === botUserId) return;
  		const isGuildMessage = Boolean(data.guild_id);
  		const guildInfo = isGuildMessage ? resolveDiscordGuildEntry({
@@ -51,7 +51,7 @@ index e072ac1e772687a01160cdde690e70435a4b3761..a825fedb17e8f4b1381eadbcdf479723
  			guildEntries
  		}) : null;
  		if (isGuildMessage && guildEntries && Object.keys(guildEntries).length > 0 && !guildInfo) return;
-@@ -47007,7 +47007,7 @@ async function preflightDiscordMessage(params) {
+@@ -47741,7 +47741,7 @@ async function preflightDiscordMessage(params) {
  		return null;
  	}
  	const guildInfo = isGuildMessage ? resolveDiscordGuildEntry({
@@ -60,7 +60,7 @@ index e072ac1e772687a01160cdde690e70435a4b3761..a825fedb17e8f4b1381eadbcdf479723
  		guildEntries: params.guildEntries
  	}) : null;
  	logDebug(`[discord-preflight] guild_id=${params.data.guild_id} guild_obj=${!!params.data.guild} guild_obj_id=${params.data.guild?.id} guildInfo=${!!guildInfo} guildEntries=${params.guildEntries ? Object.keys(params.guildEntries).join(",") : "none"}`);
-@@ -47209,7 +47209,7 @@ async function preflightDiscordMessage(params) {
+@@ -47944,7 +47944,7 @@ async function preflightDiscordMessage(params) {
  	const systemText = resolveDiscordSystemEvent(message, resolveDiscordSystemLocation({
  		isDirectMessage,
  		isGroupDm,
@@ -69,7 +69,7 @@ index e072ac1e772687a01160cdde690e70435a4b3761..a825fedb17e8f4b1381eadbcdf479723
  		channelName: channelName ?? messageChannelId
  	}));
  	if (systemText) {
-@@ -48455,7 +48455,7 @@ async function processDiscordMessage(ctx) {
+@@ -49190,7 +49190,7 @@ async function processDiscordMessage(ctx) {
  	});
  	if (statusReactionsEnabled) statusReactions.setQueued();
  	const fromLabel = isDirectMessage ? buildDirectLabel(author) : buildGuildLabel({
@@ -78,11 +78,11 @@ index e072ac1e772687a01160cdde690e70435a4b3761..a825fedb17e8f4b1381eadbcdf479723
  		channelName: channelName ?? messageChannelId,
  		channelId: messageChannelId
  	});
-diff --git a/dist/plugin-sdk/reply-DG5oS1Oj.js b/dist/plugin-sdk/reply-DG5oS1Oj.js
-index 86c517a7ba1c985fc251034d103a0ceb49ad77a8..8df2cc4f04c88c3777d08ed78503f7d6905bb77e 100644
---- a/dist/plugin-sdk/reply-DG5oS1Oj.js
-+++ b/dist/plugin-sdk/reply-DG5oS1Oj.js
-@@ -20074,7 +20074,7 @@ async function handleDiscordReactionEvent(params) {
+diff --git a/dist/plugin-sdk/reply-Bs9SaomU.js b/dist/plugin-sdk/reply-Bs9SaomU.js
+index 907b1b27046cc3291f3c540444dca29e24cdbb90..f781cddb24476007d583df27d819ffad9d4cd3da 100644
+--- a/dist/plugin-sdk/reply-Bs9SaomU.js
++++ b/dist/plugin-sdk/reply-Bs9SaomU.js
+@@ -20428,7 +20428,7 @@ async function handleDiscordReactionEvent(params) {
  		if (botUserId && user.id === botUserId) return;
  		const isGuildMessage = Boolean(data.guild_id);
  		const guildInfo = isGuildMessage ? resolveDiscordGuildEntry({
@@ -91,7 +91,7 @@ index 86c517a7ba1c985fc251034d103a0ceb49ad77a8..8df2cc4f04c88c3777d08ed78503f7d6
  			guildEntries
  		}) : null;
  		if (isGuildMessage && guildEntries && Object.keys(guildEntries).length > 0 && !guildInfo) return;
-@@ -20731,7 +20731,7 @@ async function preflightDiscordMessage(params) {
+@@ -21088,7 +21088,7 @@ async function preflightDiscordMessage(params) {
  		return null;
  	}
  	const guildInfo = isGuildMessage ? resolveDiscordGuildEntry({
@@ -100,7 +100,7 @@ index 86c517a7ba1c985fc251034d103a0ceb49ad77a8..8df2cc4f04c88c3777d08ed78503f7d6
  		guildEntries: params.guildEntries
  	}) : null;
  	logDebug(`[discord-preflight] guild_id=${params.data.guild_id} guild_obj=${!!params.data.guild} guild_obj_id=${params.data.guild?.id} guildInfo=${!!guildInfo} guildEntries=${params.guildEntries ? Object.keys(params.guildEntries).join(",") : "none"}`);
-@@ -20933,7 +20933,7 @@ async function preflightDiscordMessage(params) {
+@@ -21291,7 +21291,7 @@ async function preflightDiscordMessage(params) {
  	const systemText = resolveDiscordSystemEvent(message, resolveDiscordSystemLocation({
  		isDirectMessage,
  		isGroupDm,
@@ -109,7 +109,7 @@ index 86c517a7ba1c985fc251034d103a0ceb49ad77a8..8df2cc4f04c88c3777d08ed78503f7d6
  		channelName: channelName ?? messageChannelId
  	}));
  	if (systemText) {
-@@ -22305,7 +22305,7 @@ async function processDiscordMessage(ctx) {
+@@ -22663,7 +22663,7 @@ async function processDiscordMessage(ctx) {
  	});
  	if (statusReactionsEnabled) statusReactions.setQueued();
  	const fromLabel = isDirectMessage ? buildDirectLabel(author) : buildGuildLabel({
@@ -118,11 +118,11 @@ index 86c517a7ba1c985fc251034d103a0ceb49ad77a8..8df2cc4f04c88c3777d08ed78503f7d6
  		channelName: channelName ?? messageChannelId,
  		channelId: messageChannelId
  	});
-diff --git a/dist/reply-CdjLMJxg.js b/dist/reply-CdjLMJxg.js
-index 508934b20ae1d21dfc7d3a0be6bcb2632f6b8c64..17e37bea37c6c332991b4278748657ef254add01 100644
---- a/dist/reply-CdjLMJxg.js
-+++ b/dist/reply-CdjLMJxg.js
-@@ -14074,7 +14074,7 @@ async function handleDiscordReactionEvent(params) {
+diff --git a/dist/reply-D-ejYZny.js b/dist/reply-D-ejYZny.js
+index 436958fa28af1d069cd02e77ddc440d4894f969d..78a87b037ef2dd8171652ee004da7207ab24225d 100644
+--- a/dist/reply-D-ejYZny.js
++++ b/dist/reply-D-ejYZny.js
+@@ -14295,7 +14295,7 @@ async function handleDiscordReactionEvent(params) {
  		if (botUserId && user.id === botUserId) return;
  		const isGuildMessage = Boolean(data.guild_id);
  		const guildInfo = isGuildMessage ? resolveDiscordGuildEntry({
@@ -131,7 +131,7 @@ index 508934b20ae1d21dfc7d3a0be6bcb2632f6b8c64..17e37bea37c6c332991b4278748657ef
  			guildEntries
  		}) : null;
  		if (isGuildMessage && guildEntries && Object.keys(guildEntries).length > 0 && !guildInfo) return;
-@@ -15754,7 +15754,7 @@ async function preflightDiscordMessage(params) {
+@@ -15978,7 +15978,7 @@ async function preflightDiscordMessage(params) {
  		return null;
  	}
  	const guildInfo = isGuildMessage ? resolveDiscordGuildEntry({
@@ -140,7 +140,7 @@ index 508934b20ae1d21dfc7d3a0be6bcb2632f6b8c64..17e37bea37c6c332991b4278748657ef
  		guildEntries: params.guildEntries
  	}) : null;
  	logDebug(`[discord-preflight] guild_id=${params.data.guild_id} guild_obj=${!!params.data.guild} guild_obj_id=${params.data.guild?.id} guildInfo=${!!guildInfo} guildEntries=${params.guildEntries ? Object.keys(params.guildEntries).join(",") : "none"}`);
-@@ -15956,7 +15956,7 @@ async function preflightDiscordMessage(params) {
+@@ -16181,7 +16181,7 @@ async function preflightDiscordMessage(params) {
  	const systemText = resolveDiscordSystemEvent(message, resolveDiscordSystemLocation({
  		isDirectMessage,
  		isGroupDm,
@@ -149,7 +149,7 @@ index 508934b20ae1d21dfc7d3a0be6bcb2632f6b8c64..17e37bea37c6c332991b4278748657ef
  		channelName: channelName ?? messageChannelId
  	}));
  	if (systemText) {
-@@ -17417,7 +17417,7 @@ async function processDiscordMessage(ctx) {
+@@ -17642,7 +17642,7 @@ async function processDiscordMessage(ctx) {
  	});
  	if (statusReactionsEnabled) statusReactions.setQueued();
  	const fromLabel = isDirectMessage ? buildDirectLabel(author) : buildGuildLabel({
@@ -158,11 +158,11 @@ index 508934b20ae1d21dfc7d3a0be6bcb2632f6b8c64..17e37bea37c6c332991b4278748657ef
  		channelName: channelName ?? messageChannelId,
  		channelId: messageChannelId
  	});
-diff --git a/dist/subagent-registry-BCf5fWt9.js b/dist/subagent-registry-BCf5fWt9.js
-index eb41e167f3bce9e114553ac4b2ae815558af9cf1..e712ee33cb37a8db68b6551bd1e3aa22ce505441 100644
---- a/dist/subagent-registry-BCf5fWt9.js
-+++ b/dist/subagent-registry-BCf5fWt9.js
-@@ -39626,7 +39626,7 @@ async function handleDiscordReactionEvent(params) {
+diff --git a/dist/subagent-registry--qOHOvSD.js b/dist/subagent-registry--qOHOvSD.js
+index e5be00d8cbc4dcc2fb68c3640d9c72b365d4d291..04d29e19252d4bc5638d9067ae6ea806e60584ac 100644
+--- a/dist/subagent-registry--qOHOvSD.js
++++ b/dist/subagent-registry--qOHOvSD.js
+@@ -40082,7 +40082,7 @@ async function handleDiscordReactionEvent(params) {
  		if (botUserId && user.id === botUserId) return;
  		const isGuildMessage = Boolean(data.guild_id);
  		const guildInfo = isGuildMessage ? resolveDiscordGuildEntry({
@@ -171,7 +171,7 @@ index eb41e167f3bce9e114553ac4b2ae815558af9cf1..e712ee33cb37a8db68b6551bd1e3aa22
  			guildEntries
  		}) : null;
  		if (isGuildMessage && guildEntries && Object.keys(guildEntries).length > 0 && !guildInfo) return;
-@@ -40469,7 +40469,7 @@ async function preflightDiscordMessage(params) {
+@@ -40928,7 +40928,7 @@ async function preflightDiscordMessage(params) {
  		return null;
  	}
  	const guildInfo = isGuildMessage ? resolveDiscordGuildEntry({
@@ -180,7 +180,7 @@ index eb41e167f3bce9e114553ac4b2ae815558af9cf1..e712ee33cb37a8db68b6551bd1e3aa22
  		guildEntries: params.guildEntries
  	}) : null;
  	logDebug(`[discord-preflight] guild_id=${params.data.guild_id} guild_obj=${!!params.data.guild} guild_obj_id=${params.data.guild?.id} guildInfo=${!!guildInfo} guildEntries=${params.guildEntries ? Object.keys(params.guildEntries).join(",") : "none"}`);
-@@ -40671,7 +40671,7 @@ async function preflightDiscordMessage(params) {
+@@ -41131,7 +41131,7 @@ async function preflightDiscordMessage(params) {
  	const systemText = resolveDiscordSystemEvent(message, resolveDiscordSystemLocation({
  		isDirectMessage,
  		isGroupDm,
@@ -189,7 +189,7 @@ index eb41e167f3bce9e114553ac4b2ae815558af9cf1..e712ee33cb37a8db68b6551bd1e3aa22
  		channelName: channelName ?? messageChannelId
  	}));
  	if (systemText) {
-@@ -41917,7 +41917,7 @@ async function processDiscordMessage(ctx) {
+@@ -42377,7 +42377,7 @@ async function processDiscordMessage(ctx) {
  	});
  	if (statusReactionsEnabled) statusReactions.setQueued();
  	const fromLabel = isDirectMessage ? buildDirectLabel(author) : buildGuildLabel({
