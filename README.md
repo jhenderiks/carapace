@@ -347,9 +347,10 @@ Carapace is defense-in-depth, not a sandbox. It reduces risk — it doesn't elim
 
 Carapace may ship patches for upstream dependencies when fixes haven't been released yet. Current patches:
 
-| Package | Patch file | Why |
-|---|---|---|
-| `openclaw@2026.2.22-2` | `patches/openclaw@2026.2.22-2.patch` | Discord `guild_id` fallback when Discord payloads omit the full `guild` object |
+| Package | Patch file | Fix | Upstream |
+|---|---|---|---|
+| `openclaw@2026.2.24` | `patches/openclaw@2026.2.24.patch` | Discord `guild_id` fallback when Discord payloads omit the full `guild` object | [#7221](https://github.com/openclaw/openclaw/issues/7221), [#16860](https://github.com/openclaw/openclaw/issues/16860) |
+| `openclaw@2026.2.24` | `patches/openclaw@2026.2.24.patch` | Mattermost inbound file attachments silently dropped when `baseUrl` is a private/LAN IP — adds `ssrfPolicy: { allowPrivateNetwork: true }` to `fetchRemoteMedia()` | [#25650](https://github.com/openclaw/openclaw/issues/25650), [#19396](https://github.com/openclaw/openclaw/issues/19396) |
 
 These are applied automatically by Bun during `bun install`. When upstream releases include the fixes, the patches will be removed.
 
