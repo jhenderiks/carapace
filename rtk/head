@@ -10,6 +10,11 @@ case "$1" in
       LINES="${1#-}"; shift
       export _RTK_WRAP=1; exec rtk read "$@" --max-lines "$LINES"
     fi ;;
+  -n)
+    if [ $# -ge 3 ]; then
+      shift; LINES="$1"; shift
+      export _RTK_WRAP=1; exec rtk read "$@" --max-lines "$LINES"
+    fi ;;
   --lines=*)
     if [ $# -ge 2 ]; then
       LINES="${1#--lines=}"; shift
