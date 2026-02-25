@@ -1,4 +1,6 @@
-# This patch was generated to fix Discord guild_id handling (upstream issue #7221, #16860)
+# Patches:
+# 1. Discord guild_id handling (upstream issue #7221, #16860)
+# 2. Mattermost inbound attachments blocked on private baseUrl (upstream issue #25650, #19396)
 --- a/dist/pi-embedded-BDhvoWGL.js
 +++ b/dist/pi-embedded-BDhvoWGL.js
 @@ -47213,7 +47213,7 @@
@@ -75,3 +77,21 @@
  		channelName: channelName ?? messageChannelId,
  		channelId: messageChannelId
  	});
+--- a/extensions/mattermost/src/mattermost/monitor.ts
++++ b/extensions/mattermost/src/mattermost/monitor.ts
+@@ -283,12 +283,14 @@
+     const out: MattermostMediaInfo[] = [];
+     for (const fileId of ids) {
+       try {
+-        const fetched = await core.channel.media.fetchRemoteMedia({
++        const allowPrivateNetwork = Boolean(client.apiBaseUrl?.trim());
++        const fetched = await core.channel.media.fetchRemoteMedia({
+           url: `${client.apiBaseUrl}/files/${fileId}`,
+           fetchImpl: fetchWithAuth,
+           filePathHint: fileId,
+           maxBytes: mediaMaxBytes,
++          ssrfPolicy: allowPrivateNetwork ? { allowPrivateNetwork: true } : undefined,
+         });
+         const saved = await core.channel.media.saveMediaBuffer(
+           fetched.buffer,
+           fetched.contentType ?? undefined,
