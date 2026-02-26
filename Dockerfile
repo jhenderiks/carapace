@@ -68,6 +68,8 @@ RUN \
   && SQLITE_ARCH="$(dpkg --print-architecture | sed 's/amd64/x64/')" \
   && mkdir -p /usr/local/lib/sqlite-vec \
   && ln -s ${APP}/node_modules/sqlite-vec-linux-${SQLITE_ARCH}/vec0.so /usr/local/lib/sqlite-vec/vec0.so \
+  # symlink bat (bookworm packages as batcat)
+  && ln -s /usr/bin/batcat /usr/local/bin/bat \
   # add user & group if not exists
   && getent group ${GID} >/dev/null || groupadd -g ${GID} openclaw \
   && getent passwd ${UID} >/dev/null || useradd -m -u ${UID} -g ${GID} openclaw \
