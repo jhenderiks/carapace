@@ -349,8 +349,7 @@ Carapace may ship patches for upstream dependencies when fixes haven't been rele
 
 | Package | Patch file | Fix | Upstream |
 |---|---|---|---|
-| `openclaw@2026.2.24` | `patches/openclaw@2026.2.24.patch` | Discord `guild_id` fallback when Discord payloads omit the full `guild` object | [#7221](https://github.com/openclaw/openclaw/issues/7221), [#16860](https://github.com/openclaw/openclaw/issues/16860) |
-| `openclaw@2026.2.24` | `patches/openclaw@2026.2.24.patch` | Mattermost inbound file attachments silently dropped when `baseUrl` is a private/LAN IP — adds `ssrfPolicy: { allowPrivateNetwork: true }` to `fetchRemoteMedia()` | [#25650](https://github.com/openclaw/openclaw/issues/25650), [#19396](https://github.com/openclaw/openclaw/issues/19396) |
+| `openclaw@2026.2.25` | `patches/openclaw@2026.2.25.patch` | Mattermost inbound file attachments silently dropped when `baseUrl` is a private/LAN IP — adds `ssrfPolicy: { allowPrivateNetwork: true }` to `fetchRemoteMedia()` | [#25650](https://github.com/openclaw/openclaw/issues/25650), [#19396](https://github.com/openclaw/openclaw/issues/19396) |
 
 These are applied automatically by Bun during `bun install`. When upstream releases include the fixes, the patches will be removed.
 
