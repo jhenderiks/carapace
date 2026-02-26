@@ -1,4 +1,4 @@
-FROM node:24-trixie-slim
+FROM platformatic/node-caged:slim
 
 EXPOSE 18789
 
@@ -8,7 +8,6 @@ RUN \
     bat \
     ca-certificates \
     curl \
-    eza \
     fd-find \
     ffmpeg \
     fzf \
@@ -48,17 +47,22 @@ ARG APP=/opt/openclaw
 ARG HOME=/home/openclaw
 
 RUN \
+  ARCH="$(dpkg --print-architecture | sed 's/arm64/aarch64/' | sed 's/amd64/x86_64/')" \
   # apt housekeeping
-  apt-get clean && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* \
+  && apt-get clean && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* \
   # install yt-dlp (youtube transcript/media extraction)
   && pip install --break-system-packages yt-dlp \
   # install bun
   && npm i -g bun \
+  # install eza
+  && wget -qO /tmp/eza.tar.gz "https://github.com/eza-community/eza/releases/latest/download/eza_${ARCH}-unknown-linux-gnu.tar.gz" \
+  && tar -xzf /tmp/eza.tar.gz -C /usr/local/bin/ \
+  && rm /tmp/eza.tar.gz \
   # install rtk
-  && curl -fsSL https://github.com/rtk-ai/rtk/releases/download/v0.22.2/rtk-aarch64-unknown-linux-gnu.tar.gz | tar xz -C /usr/local/bin rtk \
+  && curl -fsSL "https://github.com/rtk-ai/rtk/releases/download/v0.22.2/rtk-${ARCH}-unknown-linux-gnu.tar.gz" | tar xz -C /usr/local/bin rtk \
   # fix sqlite-vec linking issue
-  && mkdir -p /usr/local/lib/sqlite-vec \
   && SQLITE_ARCH="$(dpkg --print-architecture | sed 's/amd64/x64/')" \
+  && mkdir -p /usr/local/lib/sqlite-vec \
   && ln -s ${APP}/node_modules/sqlite-vec-linux-${SQLITE_ARCH}/vec0.so /usr/local/lib/sqlite-vec/vec0.so \
   # add user & group if not exists
   && getent group ${GID} >/dev/null || groupadd -g ${GID} openclaw \
