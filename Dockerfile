@@ -1,3 +1,7 @@
+FROM rust:bookworm AS rtk
+
+RUN cargo install --git https://github.com/rtk-ai/rtk --tag v0.22.2
+
 FROM platformatic/node-caged:slim
 
 EXPOSE 18789
@@ -37,6 +41,8 @@ RUN \
 #     nmap \
 #     traceroute
 
+# install rtk
+COPY --from=rtk /usr/local/cargo/bin/rtk /usr/local/bin/rtk
 # install uv
 COPY --from=astral/uv:0.10.5 /uv /uvx /usr/local/bin/
 
@@ -58,8 +64,6 @@ RUN \
   && wget -qO /tmp/eza.tar.gz "https://github.com/eza-community/eza/releases/latest/download/eza_${ARCH}-unknown-linux-gnu.tar.gz" \
   && tar -xzf /tmp/eza.tar.gz -C /usr/local/bin/ \
   && rm /tmp/eza.tar.gz \
-  # install rtk
-  && curl -fsSL "https://github.com/rtk-ai/rtk/releases/download/v0.22.2/rtk-${ARCH}-unknown-linux-gnu.tar.gz" | tar xz -C /usr/local/bin rtk \
   # fix sqlite-vec linking issue
   && SQLITE_ARCH="$(dpkg --print-architecture | sed 's/amd64/x64/')" \
   && mkdir -p /usr/local/lib/sqlite-vec \
