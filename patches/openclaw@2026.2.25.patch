@@ -1,0 +1,16 @@
+--- a/extensions/mattermost/src/mattermost/monitor.ts
++++ b/extensions/mattermost/src/mattermost/monitor.ts
+@@ -284,11 +284,13 @@
+     const out: MattermostMediaInfo[] = [];
+     for (const fileId of ids) {
+       try {
++        const allowPrivateNetwork = Boolean(client.apiBaseUrl?.trim());
+         const fetched = await core.channel.media.fetchRemoteMedia({
+           url: `${client.apiBaseUrl}/files/${fileId}`,
+           fetchImpl: fetchWithAuth,
+           filePathHint: fileId,
+           maxBytes: mediaMaxBytes,
++          ssrfPolicy: allowPrivateNetwork ? { allowPrivateNetwork: true } : undefined,
+         });
+         const saved = await core.channel.media.saveMediaBuffer(
+           fetched.buffer,
