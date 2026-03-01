@@ -1,9 +1,10 @@
 import type {
   AnyAgentTool,
   OpenClawPluginApi,
-  PluginLogger,
+  RuntimeLogger,
 } from "openclaw/plugin-sdk";
 import { McpServerBridge } from "./bridge.js";
+import { normalizeJsonSchema } from "./schema.js";
 import type {
   McpCallResult,
   McpToolDefinition,
@@ -140,6 +141,7 @@ function registerMcpTool(
 
   const tool: AnyAgentTool = {
     name: openclawToolName,
+    label: openclawToolName,
     description:
       mcpTool.description ??
       `MCP tool ${mcpTool.name} from server ${runtime.config.id}`,
@@ -167,7 +169,7 @@ async function executeWithRetry(
   runtime: ServerRuntime,
   mcpToolName: string,
   args: Record<string, unknown>,
-  logger: PluginLogger,
+  logger: RuntimeLogger,
 ): Promise<McpCallResult> {
   const attempts = Math.max(1, runtime.config.retryCount + 1);
 
@@ -198,7 +200,7 @@ function normalizeMcpResult(
   serverId: string,
 ): {
   content: Array<{ type: "text"; text: string }>;
-  details?: Record<string, unknown>;
+  details: Record<string, unknown>;
 } {
   const content = normalizeContent(result?.content);
   const details: Record<string, unknown> = {};
@@ -225,14 +227,14 @@ function normalizeMcpResult(
         },
         ...prefixed,
       ],
-      ...(Object.keys(details).length > 0 ? { details } : {}),
+      details,
     };
   }
 
   if (content.length > 0) {
     return {
       content,
-      ...(Object.keys(details).length > 0 ? { details } : {}),
+      details,
     };
   }
 
@@ -243,7 +245,7 @@ function normalizeMcpResult(
         text: "MCP tool returned no textual content.",
       },
     ],
-    ...(Object.keys(details).length > 0 ? { details } : {}),
+    details,
   };
 }
 
@@ -277,104 +279,10 @@ function normalizeContent(
   return out;
 }
 
-/**
- * Recursively normalize a JSON Schema so it is compatible with strict-mode
- * providers (e.g. OpenAI Codex Responses API).
- *
- * Rules enforced:
- *  - object schemas always have `properties` (default `{}`)
- *  - object schemas always have `additionalProperties` (default `false`)
- *  - object schemas always have `required` as an array
- *  - nested schemas (properties, items, $defs, anyOf/oneOf/allOf) are
- *    normalized recursively
- */
-function normalizeJsonSchema(inputSchema: unknown): Record<string, unknown> {
-  if (!isPlainObject(inputSchema)) {
-    return {
-      type: "object",
-      properties: {},
-      required: [],
-      additionalProperties: false,
-    };
-  }
-
-  return deepNormalizeSchema(inputSchema);
-}
-
-function deepNormalizeSchema(
-  schema: Record<string, unknown>,
-): Record<string, unknown> {
-  const out: Record<string, unknown> = { ...schema };
-
-  // Infer type when missing but properties exist
-  if (!out.type && out.properties) {
-    out.type = "object";
-  }
-
-  // Object schema: ensure properties, required, additionalProperties
-  if (out.type === "object") {
-    if (!isPlainObject(out.properties)) {
-      out.properties = {};
-    }
-    if (!Array.isArray(out.required)) {
-      out.required = [];
-    }
-    if (out.additionalProperties === undefined) {
-      out.additionalProperties = false;
-    }
-
-    // Recursively normalize each property schema
-    const props = out.properties as Record<string, unknown>;
-    const normalizedProps: Record<string, unknown> = {};
-    for (const [key, propSchema] of Object.entries(props)) {
-      normalizedProps[key] = isPlainObject(propSchema)
-        ? deepNormalizeSchema(propSchema)
-        : propSchema;
-    }
-    out.properties = normalizedProps;
-
-    // Normalize additionalProperties if it's a schema object
-    if (isPlainObject(out.additionalProperties)) {
-      out.additionalProperties = deepNormalizeSchema(
-        out.additionalProperties as Record<string, unknown>,
-      );
-    }
-  }
-
-  // Array schema: normalize items
-  if (out.type === "array" && isPlainObject(out.items)) {
-    out.items = deepNormalizeSchema(out.items as Record<string, unknown>);
-  }
-
-  // Normalize $defs / definitions
-  for (const defsKey of ["$defs", "definitions"] as const) {
-    if (isPlainObject(out[defsKey])) {
-      const defs = out[defsKey] as Record<string, unknown>;
-      const normalizedDefs: Record<string, unknown> = {};
-      for (const [key, defSchema] of Object.entries(defs)) {
-        normalizedDefs[key] = isPlainObject(defSchema)
-          ? deepNormalizeSchema(defSchema)
-          : defSchema;
-      }
-      out[defsKey] = normalizedDefs;
-    }
-  }
-
-  // Normalize combinators (anyOf, oneOf, allOf)
-  for (const combinator of ["anyOf", "oneOf", "allOf"] as const) {
-    if (Array.isArray(out[combinator])) {
-      out[combinator] = (out[combinator] as unknown[]).map((item) =>
-        isPlainObject(item) ? deepNormalizeSchema(item) : item,
-      );
-    }
-  }
-
-  return out;
-}
 
 function normalizePluginConfig(
   pluginConfig: Record<string, unknown> | undefined,
-  logger: PluginLogger,
+  logger: RuntimeLogger,
 ): NormalizedPluginConfig {
   const raw = (
     isPlainObject(pluginConfig) ? pluginConfig : {}
@@ -402,7 +310,7 @@ function normalizePluginConfig(
 function normalizeServerConfig(
   serverId: string,
   input: RawServerConfig,
-  logger: PluginLogger,
+  logger: RuntimeLogger,
 ): NormalizedServerConfig | undefined {
   if (!isPlainObject(input)) {
     logger.warn(`[mcp-bridge] invalid server config (not object): ${serverId}`);
