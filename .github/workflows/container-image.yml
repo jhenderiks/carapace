@@ -11,6 +11,7 @@ on:
       - main
     paths:
       - Dockerfile
+      - Dockerfile.rtk
       - bun.lock
       - package.json
       - patches/**
@@ -23,6 +24,7 @@ on:
       - "*"
     paths:
       - Dockerfile
+      - Dockerfile.rtk
       - bun.lock
       - package.json
       - patches/**
@@ -36,6 +38,7 @@ concurrency:
 env:
   REGISTRY: ghcr.io
   IMAGE_REPOSITORY: ${{ github.repository }}
+  RTK_IMAGE_REPOSITORY: ${{ github.repository }}-rtk
 
 jobs:
   validate-image:
@@ -62,12 +65,24 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
-      - name: Build image for validation (no push)
+      - name: Build RTK image for validation (no push)
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          file: ./Dockerfile.rtk
+          platforms: ${{ matrix.platform }}
+          push: false
+          cache-from: type=gha,scope=rtk-image-validate-${{ matrix.platform_name }}
+          cache-to: type=gha,mode=max,scope=rtk-image-validate-${{ matrix.platform_name }}
+
+      - name: Build gateway image for validation (no push)
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: .
           file: ./Dockerfile
           platforms: ${{ matrix.platform }}
+          build-args: |
+            RTK_IMAGE=rtk-local
           push: false
           cache-from: type=gha,scope=container-image-validate-${{ matrix.platform_name }}
           cache-to: type=gha,mode=max,scope=container-image-validate-${{ matrix.platform_name }}
@@ -81,6 +96,7 @@ jobs:
       packages: write
     outputs:
       digest: ${{ steps.build.outputs.digest }}
+      rtk_digest: ${{ steps.build-rtk.outputs.digest }}
 
     steps:
       - name: Checkout PR head commit
@@ -98,13 +114,27 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push amd64 PR preview artifact
+      - name: Build and push amd64 RTK PR preview artifact
+        id: build-rtk
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          file: ./Dockerfile.rtk
+          platforms: linux/amd64
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.RTK_IMAGE_REPOSITORY }}:pr-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}-amd64
+          cache-from: type=gha,scope=rtk-image-pr-preview-amd64
+          cache-to: type=gha,mode=max,scope=rtk-image-pr-preview-amd64
+
+      - name: Build and push amd64 PR preview gateway artifact
         id: build
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: .
           file: ./Dockerfile
           platforms: linux/amd64
+          build-args: |
+            RTK_IMAGE=${{ env.REGISTRY }}/${{ env.RTK_IMAGE_REPOSITORY }}:pr-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}-amd64
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_REPOSITORY }}:pr-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}-amd64
           cache-from: type=gha,scope=container-image-pr-preview-amd64
@@ -119,6 +149,7 @@ jobs:
       packages: write
     outputs:
       digest: ${{ steps.build.outputs.digest }}
+      rtk_digest: ${{ steps.build-rtk.outputs.digest }}
 
     steps:
       - name: Checkout PR head commit
@@ -136,20 +167,34 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push arm64 PR preview artifact
+      - name: Build and push arm64 RTK PR preview artifact
+        id: build-rtk
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          file: ./Dockerfile.rtk
+          platforms: linux/arm64
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.RTK_IMAGE_REPOSITORY }}:pr-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}-arm64
+          cache-from: type=gha,scope=rtk-image-pr-preview-arm64
+          cache-to: type=gha,mode=max,scope=rtk-image-pr-preview-arm64
+
+      - name: Build and push arm64 PR preview gateway artifact
         id: build
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: .
           file: ./Dockerfile
           platforms: linux/arm64
+          build-args: |
+            RTK_IMAGE=${{ env.REGISTRY }}/${{ env.RTK_IMAGE_REPOSITORY }}:pr-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}-arm64
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_REPOSITORY }}:pr-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}-arm64
           cache-from: type=gha,scope=container-image-pr-preview-arm64
           cache-to: type=gha,mode=max,scope=container-image-pr-preview-arm64
 
   publish-pr-preview-manifest:
-    name: Publish PR preview multi-arch manifest
+    name: Publish PR preview multi-arch manifests
     needs:
       - publish-pr-preview-amd64
       - publish-pr-preview-arm64
@@ -172,34 +217,45 @@ jobs:
       - name: Create and push multi-arch PR preview manifests
         env:
           IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_REPOSITORY }}
+          RTK_IMAGE: ${{ env.REGISTRY }}/${{ env.RTK_IMAGE_REPOSITORY }}
           AMD64_DIGEST: ${{ needs.publish-pr-preview-amd64.outputs.digest }}
           ARM64_DIGEST: ${{ needs.publish-pr-preview-arm64.outputs.digest }}
+          RTK_AMD64_DIGEST: ${{ needs.publish-pr-preview-amd64.outputs.rtk_digest }}
+          RTK_ARM64_DIGEST: ${{ needs.publish-pr-preview-arm64.outputs.rtk_digest }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
           for TAG in "pr-${PR_NUMBER}" "pr-${PR_NUMBER}-${PR_SHA}"; do
-            echo "Publishing manifest: ${IMAGE}:${TAG}"
+            echo "Publishing gateway manifest: ${IMAGE}:${TAG}"
             docker buildx imagetools create \
               --tag "${IMAGE}:${TAG}" \
               "${IMAGE}@${AMD64_DIGEST}" \
               "${IMAGE}@${ARM64_DIGEST}"
+
+            echo "Publishing RTK manifest: ${RTK_IMAGE}:${TAG}"
+            docker buildx imagetools create \
+              --tag "${RTK_IMAGE}:${TAG}" \
+              "${RTK_IMAGE}@${RTK_AMD64_DIGEST}" \
+              "${RTK_IMAGE}@${RTK_ARM64_DIGEST}"
           done
 
-      - name: Add pull command to workflow summary
+      - name: Add pull commands to workflow summary
         run: |
           IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_REPOSITORY }}"
+          RTK_IMAGE="${{ env.REGISTRY }}/${{ env.RTK_IMAGE_REPOSITORY }}"
           PR_TAG="pr-${{ github.event.pull_request.number }}"
           {
-            echo "### Pull this PR preview image"
+            echo "### Pull PR preview images"
             echo ""
-            echo "\`docker pull ${IMAGE}:${PR_TAG}\`"
+            echo "Gateway: \`docker pull ${IMAGE}:${PR_TAG}\`"
+            echo "RTK: \`docker pull ${RTK_IMAGE}:${PR_TAG}\`"
             echo ""
             echo "Trigger: add the \`publish-preview\` label to the PR."
           } >> "$GITHUB_STEP_SUMMARY"
 
   publish-image-amd64:
-    name: Publish amd64 image artifact (main/tags)
+    name: Publish amd64 image artifacts (main/tags)
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
@@ -207,6 +263,7 @@ jobs:
       packages: write
     outputs:
       digest: ${{ steps.build.outputs.digest }}
+      rtk_digest: ${{ steps.build-rtk.outputs.digest }}
 
     steps:
       - name: Checkout repository
@@ -222,7 +279,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Generate image labels
+      - name: Generate gateway image labels
         id: image-meta
         uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
         with:
@@ -233,13 +290,39 @@ jobs:
             type=ref,event=tag
             type=sha,format=short
 
-      - name: Build and push amd64 image artifact
+      - name: Generate RTK image labels
+        id: rtk-image-meta
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.RTK_IMAGE_REPOSITORY }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=branch
+            type=ref,event=tag
+            type=sha,format=short
+
+      - name: Build and push amd64 RTK artifact
+        id: build-rtk
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          file: ./Dockerfile.rtk
+          platforms: linux/amd64
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.RTK_IMAGE_REPOSITORY }}:build-${{ github.sha }}-amd64
+          labels: ${{ steps.rtk-image-meta.outputs.labels }}
+          cache-from: type=gha,scope=rtk-image-publish-amd64
+          cache-to: type=gha,mode=max,scope=rtk-image-publish-amd64
+
+      - name: Build and push amd64 gateway artifact
         id: build
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: .
           file: ./Dockerfile
           platforms: linux/amd64
+          build-args: |
+            RTK_IMAGE=${{ env.REGISTRY }}/${{ env.RTK_IMAGE_REPOSITORY }}:build-${{ github.sha }}-amd64
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_REPOSITORY }}:build-${{ github.sha }}-amd64
           labels: ${{ steps.image-meta.outputs.labels }}
@@ -247,7 +330,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=container-image-publish-amd64
 
   publish-image-arm64:
-    name: Publish arm64 image artifact (main/tags)
+    name: Publish arm64 image artifacts (main/tags)
     if: github.event_name == 'push'
     runs-on: ubuntu-24.04-arm
     permissions:
@@ -255,6 +338,7 @@ jobs:
       packages: write
     outputs:
       digest: ${{ steps.build.outputs.digest }}
+      rtk_digest: ${{ steps.build-rtk.outputs.digest }}
 
     steps:
       - name: Checkout repository
@@ -270,7 +354,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Generate image labels
+      - name: Generate gateway image labels
         id: image-meta
         uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
         with:
@@ -281,13 +365,39 @@ jobs:
             type=ref,event=tag
             type=sha,format=short
 
-      - name: Build and push arm64 image artifact
+      - name: Generate RTK image labels
+        id: rtk-image-meta
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.RTK_IMAGE_REPOSITORY }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=branch
+            type=ref,event=tag
+            type=sha,format=short
+
+      - name: Build and push arm64 RTK artifact
+        id: build-rtk
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          file: ./Dockerfile.rtk
+          platforms: linux/arm64
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.RTK_IMAGE_REPOSITORY }}:build-${{ github.sha }}-arm64
+          labels: ${{ steps.rtk-image-meta.outputs.labels }}
+          cache-from: type=gha,scope=rtk-image-publish-arm64
+          cache-to: type=gha,mode=max,scope=rtk-image-publish-arm64
+
+      - name: Build and push arm64 gateway artifact
         id: build
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: .
           file: ./Dockerfile
           platforms: linux/arm64
+          build-args: |
+            RTK_IMAGE=${{ env.REGISTRY }}/${{ env.RTK_IMAGE_REPOSITORY }}:build-${{ github.sha }}-arm64
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_REPOSITORY }}:build-${{ github.sha }}-arm64
           labels: ${{ steps.image-meta.outputs.labels }}
@@ -316,7 +426,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
-      - name: Generate release tags
+      - name: Generate gateway release tags
         id: image-meta
         uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
         with:
@@ -327,19 +437,44 @@ jobs:
             type=ref,event=tag
             type=sha,format=short
 
+      - name: Generate RTK release tags
+        id: rtk-image-meta
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.RTK_IMAGE_REPOSITORY }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=branch
+            type=ref,event=tag
+            type=sha,format=short
+
       - name: Create and push multi-arch manifests
         env:
           IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_REPOSITORY }}
+          RTK_IMAGE: ${{ env.REGISTRY }}/${{ env.RTK_IMAGE_REPOSITORY }}
           AMD64_DIGEST: ${{ needs.publish-image-amd64.outputs.digest }}
           ARM64_DIGEST: ${{ needs.publish-image-arm64.outputs.digest }}
-          TAGS: ${{ steps.image-meta.outputs.tags }}
+          RTK_AMD64_DIGEST: ${{ needs.publish-image-amd64.outputs.rtk_digest }}
+          RTK_ARM64_DIGEST: ${{ needs.publish-image-arm64.outputs.rtk_digest }}
+          MAIN_TAGS: ${{ steps.image-meta.outputs.tags }}
+          RTK_TAGS: ${{ steps.rtk-image-meta.outputs.tags }}
         run: |
           set -euo pipefail
+
           while IFS= read -r TAG; do
             [ -z "$TAG" ] && continue
-            echo "Publishing manifest: $TAG"
+            echo "Publishing gateway manifest: $TAG"
             docker buildx imagetools create \
               --tag "$TAG" \
               "${IMAGE}@${AMD64_DIGEST}" \
               "${IMAGE}@${ARM64_DIGEST}"
-          done <<< "$TAGS"
+          done <<< "$MAIN_TAGS"
+
+          while IFS= read -r TAG; do
+            [ -z "$TAG" ] && continue
+            echo "Publishing RTK manifest: $TAG"
+            docker buildx imagetools create \
+              --tag "$TAG" \
+              "${RTK_IMAGE}@${RTK_AMD64_DIGEST}" \
+              "${RTK_IMAGE}@${RTK_ARM64_DIGEST}"
+          done <<< "$RTK_TAGS"

@@ -1,0 +1,32 @@
+FROM rust:bookworm AS build
+
+ARG RTK_VERSION=v0.23.0
+
+RUN \
+  DEBIAN_FRONTEND=noninteractive apt-get update \
+  && apt-get install -y --no-install-recommends \
+    musl-tools \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
+
+RUN \
+  case "$(dpkg --print-architecture)" in \
+    amd64) RTK_TARGET="x86_64-unknown-linux-musl" ;; \
+    arm64) RTK_TARGET="aarch64-unknown-linux-musl" ;; \
+    *) echo "Unsupported architecture: $(dpkg --print-architecture)" >&2; exit 1 ;; \
+  esac \
+  && rustup target add ${RTK_TARGET} \
+  && cargo install \
+    --git https://github.com/rtk-ai/rtk \
+    --tag ${RTK_VERSION} \
+    --target ${RTK_TARGET} \
+    --root /opt/rtk-install
+
+FROM alpine:3.21
+
+COPY --from=build /opt/rtk-install/bin/rtk /usr/local/bin/rtk
+COPY rtk /opt/rtk
+
+RUN chmod 755 /opt/rtk/*
+
+ENTRYPOINT ["rtk"]

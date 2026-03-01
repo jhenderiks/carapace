@@ -277,7 +277,26 @@ The isolated browser automatically clears stale profile locks on startup, addres
 
 [rtk](https://github.com/rtk-ai/rtk) is a CLI proxy that compresses shell command output before it reaches the LLM context, reducing token usage by 40-90% on common operations (git, ls, grep, etc.).
 
-Carapace includes rtk and a set of selective shell wrappers (`rtk/`) that are baked into the image at `/opt/rtk`. When OpenClaw's `tools.exec.pathPrepend` config points at this directory, agent-initiated commands are transparently routed through rtk — the LLM only ever sees compressed output.
+Carapace ships a companion RTK image (`ghcr.io/jhenderiks/carapace-rtk`) built from `Dockerfile.rtk`. That image contains:
+
+- the `rtk` binary (currently v0.23.0)
+- the selective wrapper scripts from `rtk/` (mounted in the gateway image at `/opt/rtk`)
+
+The gateway image copies those artifacts during build (`ARG RTK_IMAGE=...`) so other projects can reuse the exact same RTK package without recompiling Rust or duplicating wrappers.
+
+To build against a custom RTK image locally:
+
+```bash
+# build the RTK companion image
+docker build -f Dockerfile.rtk -t ghcr.io/jhenderiks/carapace-rtk:latest .
+
+# build gateway/cli using that image
+RTK_IMAGE=ghcr.io/jhenderiks/carapace-rtk:latest docker compose build
+```
+
+If `RTK_IMAGE` is omitted, the Dockerfile falls back to a local `rtk-local` build stage and compiles rtk from source.
+
+When OpenClaw's `tools.exec.pathPrepend` config points at `/opt/rtk`, agent-initiated commands are transparently routed through rtk — the LLM only ever sees compressed output.
 
 **How it works:**
 
@@ -296,6 +315,7 @@ Carapace includes rtk and a set of selective shell wrappers (`rtk/`) that are ba
 | `rg pattern` | `rtk grep pattern` | ripgrep → rtk's compact grep |
 | `eslint` | `rtk lint` | rtk's lint formatter |
 | `head -N file` | `rtk read file --max-lines N` | Only when a file arg is present (piped `head` passes through) |
+| `mypy` | `rtk mypy` | New in rtk v0.23.0 grouped type-check output |
 
 **Configuration** — add the following to your OpenClaw config and restart the gateway:
 
