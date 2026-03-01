@@ -4,7 +4,7 @@ services:
     build:
       context: .
       args:
-        RTK_IMAGE: ${RTK_IMAGE:-ghcr.io/jhenderiks/carapace-rtk:latest}
+        RTK_IMAGE: ${RTK_IMAGE:-rtk-local}
     container_name: openclaw
     command: [gateway]
     env_file:
@@ -34,7 +34,7 @@ services:
     build:
       context: .
       args:
-        RTK_IMAGE: ${RTK_IMAGE:-ghcr.io/jhenderiks/carapace-rtk:latest}
+        RTK_IMAGE: ${RTK_IMAGE:-rtk-local}
     container_name: openclaw-cli
     profiles: [cli]
     env_file:

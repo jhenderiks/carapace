@@ -5,6 +5,7 @@ FROM rust:bookworm AS rtk-local-build
 ARG RTK_VERSION
 RUN cargo install --git https://github.com/rtk-ai/rtk --tag ${RTK_VERSION}
 
+# minimal stage to hold rtk artifacts for local fallback (when no RTK_IMAGE is set)
 FROM scratch AS rtk-local
 COPY --from=rtk-local-build /usr/local/cargo/bin/rtk /usr/local/bin/rtk
 COPY rtk /opt/rtk

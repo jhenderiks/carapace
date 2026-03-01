@@ -65,13 +65,15 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
-      - name: Build RTK image for validation (no push)
+      - name: Build and load RTK image for validation
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: .
           file: ./Dockerfile.rtk
           platforms: ${{ matrix.platform }}
           push: false
+          load: true
+          tags: local/carapace-rtk:validate
           cache-from: type=gha,scope=rtk-image-validate-${{ matrix.platform_name }}
           cache-to: type=gha,mode=max,scope=rtk-image-validate-${{ matrix.platform_name }}
 
@@ -82,7 +84,7 @@ jobs:
           file: ./Dockerfile
           platforms: ${{ matrix.platform }}
           build-args: |
-            RTK_IMAGE=rtk-local
+            RTK_IMAGE=local/carapace-rtk:validate
           push: false
           cache-from: type=gha,scope=container-image-validate-${{ matrix.platform_name }}
           cache-to: type=gha,mode=max,scope=container-image-validate-${{ matrix.platform_name }}
