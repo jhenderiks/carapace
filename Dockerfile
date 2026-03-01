@@ -1,4 +1,5 @@
 ARG RTK_VERSION=v0.23.0
+ARG RTK_IMAGE=rtk-local
 
 FROM rust:bookworm AS rtk-local-build
 ARG RTK_VERSION
@@ -8,7 +9,6 @@ FROM scratch AS rtk-local
 COPY --from=rtk-local-build /usr/local/cargo/bin/rtk /usr/local/bin/rtk
 COPY rtk /opt/rtk
 
-ARG RTK_IMAGE=rtk-local
 FROM ${RTK_IMAGE} AS rtk
 
 FROM platformatic/node-caged:slim
