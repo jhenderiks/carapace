@@ -11,6 +11,7 @@
     "up": "docker compose up"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "1.27.1",
     "openclaw": "2026.2.25",
     "typescript": "5.9.3"
   },

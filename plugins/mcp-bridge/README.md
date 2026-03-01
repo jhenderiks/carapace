@@ -1,0 +1,54 @@
+# mcp-bridge (Phase 1)
+
+OpenClaw plugin that bridges MCP stdio servers into agent tools.
+
+## Current scope
+
+- ✅ Spawn MCP server processes over stdio
+- ✅ Discover MCP tools with `listTools`
+- ✅ Register each MCP tool as an OpenClaw tool (`{prefix}_{name}`)
+- ✅ Proxy tool calls via `callTool`
+- ✅ Retry once after reconnect on tool call failure
+- ✅ Graceful disconnect on `gateway_stop`
+- ⚠️ `lifecycle: "session"` is currently treated as shared/gateway lifecycle
+- 🚧 RTK hook + context-mode persistence hooks are planned for later phases
+
+## Install (linked local plugin)
+
+```bash
+openclaw plugins install -l /home/taka/apps/arlo/src/projects/mcp-bridge-plugin
+```
+
+## Example config
+
+```json5
+{
+  plugins: {
+    entries: {
+      "mcp-bridge": {
+        enabled: true,
+        config: {
+          servers: {
+            vk: {
+              command: "/usr/local/bin/vibe-kanban-mcp",
+              env: { VIBE_BACKEND_URL: "https://vk.pxlbyt.co" },
+              lifecycle: "gateway",
+              toolPrefix: "vk",
+              optional: false,
+              timeoutMs: 30000,
+              retryCount: 1,
+              retryBackoffMs: 500
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+## Notes
+
+- MCP tools are discovered at plugin startup and registered dynamically.
+- Tool name collisions are logged and skipped.
+- Config validation is enforced by `openclaw.plugin.json`.

@@ -102,6 +102,7 @@ WORKDIR ${APP}
 
 COPY --chown=${UID}:${GID} bun.lock package.json ./
 COPY --chown=${UID}:${GID} patches patches
+COPY --chown=${UID}:${GID} plugins plugins
 COPY --from=rtk --chown=${UID}:${GID} /opt/rtk /opt/rtk
 
 RUN bun i --frozen-lockfile \
