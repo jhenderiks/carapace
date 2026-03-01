@@ -1,6 +1,16 @@
-FROM rust:bookworm AS rtk
+ARG RTK_VERSION=v0.23.0
+ARG RTK_IMAGE=rtk-local
 
-RUN cargo install --git https://github.com/rtk-ai/rtk --tag v0.22.2
+FROM rust:bookworm AS rtk-local-build
+ARG RTK_VERSION
+RUN cargo install --git https://github.com/rtk-ai/rtk --tag ${RTK_VERSION}
+
+# minimal stage to hold rtk artifacts for local fallback (when no RTK_IMAGE is set)
+FROM scratch AS rtk-local
+COPY --from=rtk-local-build /usr/local/cargo/bin/rtk /usr/local/bin/rtk
+COPY rtk /opt/rtk
+
+FROM ${RTK_IMAGE} AS rtk
 
 FROM platformatic/node-caged:slim
 
@@ -42,7 +52,7 @@ RUN \
 #     traceroute
 
 # install rtk
-COPY --from=rtk /usr/local/cargo/bin/rtk /usr/local/bin/rtk
+COPY --from=rtk /usr/local/bin/rtk /usr/local/bin/rtk
 # install uv
 COPY --from=astral/uv:0.10.5 /uv /uvx /usr/local/bin/
 
@@ -92,7 +102,7 @@ WORKDIR ${APP}
 
 COPY --chown=${UID}:${GID} bun.lock package.json .
 COPY --chown=${UID}:${GID} patches patches
-COPY --chown=${UID}:${GID} rtk /opt/rtk
+COPY --from=rtk --chown=${UID}:${GID} /opt/rtk /opt/rtk
 
 RUN bun i --frozen-lockfile \
   # OpenClaw blocks world-writable plugin files; normalize modes after install
