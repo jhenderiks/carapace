@@ -1,6 +1,6 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
-import type { PluginLogger } from "openclaw/plugin-sdk";
+import type { RuntimeLogger } from "openclaw/plugin-sdk";
 import type { McpCallResult, McpToolDefinition, NormalizedServerConfig } from "./types.js";
 
 const PLUGIN_VERSION = "0.1.0";
@@ -13,7 +13,7 @@ export class McpServerBridge {
   constructor(
     private readonly serverId: string,
     private readonly config: NormalizedServerConfig,
-    private readonly logger: PluginLogger,
+    private readonly logger: RuntimeLogger,
   ) {}
 
   async connect(): Promise<void> {
@@ -29,7 +29,7 @@ export class McpServerBridge {
         command: this.config.command,
         args: this.config.args,
         env: {
-          ...process.env,
+          ...Object.fromEntries(Object.entries(process.env).filter(([, value]) => typeof value === "string") as Array<[string, string]>),
           ...this.config.env,
         },
       });
@@ -62,19 +62,31 @@ export class McpServerBridge {
     );
     const tools = Array.isArray(result?.tools) ? result.tools : [];
 
-    return tools
-      .map((tool) => {
-        const name = typeof tool?.name === "string" ? tool.name.trim() : "";
-        if (!name) {
-          return undefined;
-        }
-        const description = typeof tool?.description === "string" ? tool.description : undefined;
-        const inputSchema = isPlainObject(tool?.inputSchema)
-          ? (tool.inputSchema as Record<string, unknown>)
-          : undefined;
-        return { name, description, inputSchema } satisfies McpToolDefinition;
-      })
-      .filter((tool): tool is McpToolDefinition => Boolean(tool));
+    const output: McpToolDefinition[] = [];
+
+    for (const tool of tools) {
+      const name = typeof tool?.name === "string" ? tool.name.trim() : "";
+      if (!name) {
+        continue;
+      }
+
+      const inputSchema = isPlainObject(tool?.inputSchema)
+        ? (tool.inputSchema as Record<string, unknown>)
+        : undefined;
+
+      const toolDef: McpToolDefinition = {
+        name,
+        inputSchema,
+      };
+
+      if (typeof tool?.description === "string") {
+        toolDef.description = tool.description;
+      }
+
+      output.push(toolDef);
+    }
+
+    return output;
   }
 
   async callTool(name: string, args: Record<string, unknown>): Promise<McpCallResult> {

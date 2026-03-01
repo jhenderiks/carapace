@@ -1,9 +1,10 @@
 import type {
   AnyAgentTool,
   OpenClawPluginApi,
-  PluginLogger,
+  RuntimeLogger,
 } from "openclaw/plugin-sdk";
 import { McpServerBridge } from "./bridge.js";
+import { normalizeJsonSchema } from "./schema.js";
 import type {
   McpCallResult,
   McpToolDefinition,
@@ -140,6 +141,7 @@ function registerMcpTool(
 
   const tool: AnyAgentTool = {
     name: openclawToolName,
+    label: openclawToolName,
     description:
       mcpTool.description ??
       `MCP tool ${mcpTool.name} from server ${runtime.config.id}`,
@@ -167,7 +169,7 @@ async function executeWithRetry(
   runtime: ServerRuntime,
   mcpToolName: string,
   args: Record<string, unknown>,
-  logger: PluginLogger,
+  logger: RuntimeLogger,
 ): Promise<McpCallResult> {
   const attempts = Math.max(1, runtime.config.retryCount + 1);
 
@@ -198,7 +200,7 @@ function normalizeMcpResult(
   serverId: string,
 ): {
   content: Array<{ type: "text"; text: string }>;
-  details?: Record<string, unknown>;
+  details: Record<string, unknown>;
 } {
   const content = normalizeContent(result?.content);
   const details: Record<string, unknown> = {};
@@ -225,14 +227,14 @@ function normalizeMcpResult(
         },
         ...prefixed,
       ],
-      ...(Object.keys(details).length > 0 ? { details } : {}),
+      details,
     };
   }
 
   if (content.length > 0) {
     return {
       content,
-      ...(Object.keys(details).length > 0 ? { details } : {}),
+      details,
     };
   }
 
@@ -243,7 +245,7 @@ function normalizeMcpResult(
         text: "MCP tool returned no textual content.",
       },
     ],
-    ...(Object.keys(details).length > 0 ? { details } : {}),
+    details,
   };
 }
 
@@ -277,21 +279,10 @@ function normalizeContent(
   return out;
 }
 
-function normalizeJsonSchema(inputSchema: unknown): Record<string, unknown> {
-  if (isPlainObject(inputSchema)) {
-    return inputSchema;
-  }
-
-  return {
-    type: "object",
-    additionalProperties: true,
-    properties: {},
-  };
-}
 
 function normalizePluginConfig(
   pluginConfig: Record<string, unknown> | undefined,
-  logger: PluginLogger,
+  logger: RuntimeLogger,
 ): NormalizedPluginConfig {
   const raw = (
     isPlainObject(pluginConfig) ? pluginConfig : {}
@@ -319,7 +310,7 @@ function normalizePluginConfig(
 function normalizeServerConfig(
   serverId: string,
   input: RawServerConfig,
-  logger: PluginLogger,
+  logger: RuntimeLogger,
 ): NormalizedServerConfig | undefined {
   if (!isPlainObject(input)) {
     logger.warn(`[mcp-bridge] invalid server config (not object): ${serverId}`);
