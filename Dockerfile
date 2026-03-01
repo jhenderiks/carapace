@@ -100,7 +100,7 @@ ENV OPENCLAW_WORKSPACE_DIR=${OPENCLAW_STATE_DIR}/workspace
 
 WORKDIR ${APP}
 
-COPY --chown=${UID}:${GID} bun.lock package.json .
+COPY --chown=${UID}:${GID} bun.lock package.json ./
 COPY --chown=${UID}:${GID} patches patches
 COPY --from=rtk --chown=${UID}:${GID} /opt/rtk /opt/rtk
 
