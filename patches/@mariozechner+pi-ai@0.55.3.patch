@@ -1,0 +1,59 @@
+diff --git a/dist/models.generated.js b/dist/models.generated.js
+index a61b4f3..534af80 100644
+--- a/dist/models.generated.js
++++ b/dist/models.generated.js
+@@ -5639,6 +5639,23 @@ export const MODELS = {
+             contextWindow: 128000,
+             maxTokens: 128000,
+         },
++        "gpt-5.4": {
++            id: "gpt-5.4",
++            name: "GPT-5.4",
++            api: "openai-codex-responses",
++            provider: "openai-codex",
++            baseUrl: "https://chatgpt.com/backend-api",
++            reasoning: true,
++            input: ["text", "image"],
++            cost: {
++                input: 2.5,
++                output: 15,
++                cacheRead: 0.25,
++                cacheWrite: 0,
++            },
++            contextWindow: 272000,
++            maxTokens: 128000,
++        },
+     },
+     "opencode": {
+         "big-pickle": {
+diff --git a/dist/models.js b/dist/models.js
+index 6a4e2f0..1ad560e 100644
+--- a/dist/models.js
++++ b/dist/models.js
+@@ -31,11 +31,11 @@ export function calculateCost(model, usage) {
+  * Check if a model supports xhigh thinking level.
+  *
+  * Supported today:
+- * - GPT-5.2 / GPT-5.3 model families
++ * - GPT-5.2 / GPT-5.3 / GPT-5.4 model families
+  * - Anthropic Messages API Opus 4.6 models (xhigh maps to adaptive effort "max")
+  */
+ export function supportsXhigh(model) {
+-    if (model.id.includes("gpt-5.2") || model.id.includes("gpt-5.3")) {
++    if (model.id.includes("gpt-5.2") || model.id.includes("gpt-5.3") || model.id.includes("gpt-5.4")) {
+         return true;
+     }
+     if (model.api === "anthropic-messages") {
+diff --git a/dist/providers/openai-codex-responses.js b/dist/providers/openai-codex-responses.js
+index 7fe8f3b..c476a67 100644
+--- a/dist/providers/openai-codex-responses.js
++++ b/dist/providers/openai-codex-responses.js
+@@ -222,7 +222,7 @@ function buildRequestBody(model, context, options) {
+ }
+ function clampReasoningEffort(modelId, effort) {
+     const id = modelId.includes("/") ? modelId.split("/").pop() : modelId;
+-    if ((id.startsWith("gpt-5.2") || id.startsWith("gpt-5.3")) && effort === "minimal")
++    if ((id.startsWith("gpt-5.2") || id.startsWith("gpt-5.3") || id.startsWith("gpt-5.4")) && effort === "minimal")
+         return "low";
+     if (id === "gpt-5.1" && effort === "xhigh")
+         return "high";
