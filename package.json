@@ -12,10 +12,10 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.27.1",
-    "openclaw": "2026.2.25",
+    "openclaw": "2026.3.2",
     "typescript": "5.9.3"
   },
   "patchedDependencies": {
-    "openclaw@2026.2.25": "patches/openclaw@2026.2.25.patch"
+    "openclaw@2026.3.2": "patches/openclaw@2026.3.2.patch"
   }
 }

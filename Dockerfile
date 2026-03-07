@@ -105,7 +105,7 @@ COPY --chown=${UID}:${GID} patches patches
 COPY --chown=${UID}:${GID} plugins plugins
 COPY --from=rtk --chown=${UID}:${GID} /opt/rtk /opt/rtk
 
-RUN bun i --frozen-lockfile \
+RUN bun i --frozen-lockfile --backend=copyfile \
   # OpenClaw blocks world-writable plugin files; normalize modes after install
   && find ${APP}/node_modules/openclaw/extensions -type d -exec chmod 755 {} + \
   && find ${APP}/node_modules/openclaw/extensions -type f -exec chmod 644 {} +
