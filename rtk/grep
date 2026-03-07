@@ -21,9 +21,17 @@ fi
 if [ $# -eq 0 ]; then
   PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec grep
 fi
-# Piped stdin → native grep (filter mode, not workspace search)
+# Redirected stdin → native grep (filter mode, not workspace search).
+# Non-interactive agent exec commonly attaches stdin to /dev/null; that
+# should still use rtk grep instead of forcing a native grep fallback.
 if [ ! -t 0 ]; then
-  PATH="${PATH#/opt/rtk:}"; export PATH; exec grep "$@"
+  _stdin_target=$(readlink /proc/self/fd/0 2>/dev/null || printf '')
+  case "$_stdin_target" in
+    /dev/null|'') ;;
+    *)
+      PATH="${PATH#/opt/rtk:}"; export PATH; exec grep "$@"
+      ;;
+  esac
 fi
 
 # No leading flags → straight to rtk
@@ -43,64 +51,80 @@ for _a in "$@"; do
 done
 
 # Second pass: separate leading flags from positional args
-# Save original args in case translation fails
-_oIFS="$IFS"
-_nargs=0
-_flags=""
+# Keep flags newline-delimited so we can rebuild argv without eval.
+append_flag() {
+  if [ -n "$_flags_nl" ]; then
+    _flags_nl="${_flags_nl}
+$1"
+  else
+    _flags_nl="$1"
+  fi
+}
+
+_flags_nl=""
 _pattern=""
 _path=""
+_pending_flag=""
 
 for _a in "$@"; do
+  if [ -n "$_pending_flag" ]; then
+    append_flag "$_pending_flag"
+    append_flag "$_a"
+    _pending_flag=""
+    continue
+  fi
+
   if [ -z "$_pattern" ]; then
     case "$_a" in
       # Flags that take a value: buffer next arg
       -A|-B|-C|-m|--after-context|--before-context|--context|--max-count)
-        _flags="${_flags:+$_flags }_VALFLAG_${_a}" ;;
+        _pending_flag="$_a" ;;
       # Combined: -A5, -B3, -C2
       -[ABC][0-9]*)
-        _flags="${_flags:+$_flags }${_a}" ;;
+        append_flag "$_a" ;;
       # Translate conflicting short flags to long rg equivalents
-      -v) _flags="${_flags:+$_flags }--invert-match" ;;
-      -o) _flags="${_flags:+$_flags }--only-matching" ;;
+      -v) append_flag "--invert-match" ;;
+      -o) append_flag "--only-matching" ;;
       # grep regex mode flags: rg defaults to extended, strip or translate
       -E|--extended-regexp|-G|--basic-regexp) ;; # rg handles these natively, skip
-      -F|--fixed-strings) _flags="${_flags:+$_flags }-F" ;;
-      -P|--perl-regexp) _flags="${_flags:+$_flags }-P" ;;
-      -w|--word-regexp) _flags="${_flags:+$_flags }-w" ;;
+      -F|--fixed-strings) append_flag "-F" ;;
+      -P|--perl-regexp) append_flag "-P" ;;
+      -w|--word-regexp) append_flag "-w" ;;
       # Any other flag
       -*)
-        _flags="${_flags:+$_flags }${_a}" ;;
+        append_flag "$_a" ;;
       *)
-        # Check if previous flag was a value-flag waiting for its arg
-        case "$_flags" in
-          *_VALFLAG_*)
-            _vf="${_flags##*_VALFLAG_}"
-            _vf="${_vf%% *}"
-            _flags="${_flags%_VALFLAG_*}${_vf} ${_a}"
-            ;;
-          *)
-            _pattern="$_a" ;;
-        esac ;;
+        _pattern="$_a" ;;
     esac
   elif [ -z "$_path" ]; then
     case "$_a" in
-      -*) _flags="${_flags:+$_flags }${_a}" ;;
+      -*) append_flag "$_a" ;;
       *) _path="$_a" ;;
     esac
   else
     # Additional args after pattern + path go to flags
-    _flags="${_flags:+$_flags }${_a}"
+    append_flag "$_a"
   fi
 done
 
 # If we couldn't extract a pattern, fall back
-if [ -z "$_pattern" ]; then
+if [ -n "$_pending_flag" ] || [ -z "$_pattern" ]; then
   PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec grep "$@"
 fi
 
 export _RTK_WRAP=1
+_old_IFS="$IFS"
+IFS='
+'
+set -f
 if [ -n "$_path" ]; then
-  eval "exec rtk grep \"\$_pattern\" \"\$_path\" $_flags"
+  set -- "$_pattern" "$_path"
 else
-  eval "exec rtk grep \"\$_pattern\" . $_flags"
+  set -- "$_pattern" "."
 fi
+for _flag in $_flags_nl; do
+  set -- "$@" "$_flag"
+done
+IFS="$_old_IFS"
+set +f
+exec rtk grep "$@"
