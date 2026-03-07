@@ -1,7 +1,7 @@
 #!/bin/sh
 # rtk wrapper: next → rtk next
 if [ -n "$_RTK_WRAP" ]; then
-  PATH="${PATH#/opt/rtk:}"
+  PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g")
   export PATH
   exec next "$@"
 fi

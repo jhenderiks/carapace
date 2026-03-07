@@ -1,9 +1,9 @@
 #!/bin/sh
 if [ -n "$_RTK_WRAP" ]; then
-  PATH="${PATH#/opt/rtk:}"; export PATH; exec ruff "$@"
+  PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec ruff "$@"
 fi
 case "$1" in
   check|format)
     export _RTK_WRAP=1; exec rtk ruff "$@" ;;
-  *) PATH="${PATH#/opt/rtk:}"; export PATH; exec ruff "$@" ;;
+  *) PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec ruff "$@" ;;
 esac

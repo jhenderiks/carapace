@@ -1,6 +1,6 @@
 #!/bin/sh
 if [ -n "$_RTK_WRAP" ]; then
-  PATH="${PATH#/opt/rtk:}"; export PATH; exec git "$@"
+  PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec git "$@"
 fi
 # Route supported subcommands through rtk for token savings.
 # For subcommands where rtk only handles a subset of flags,
@@ -19,8 +19,8 @@ case "$1" in
       esac
     done
     if [ "$_native" = 1 ]; then
-      PATH="${PATH#/opt/rtk:}"; export PATH; exec git "$@"
+      PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec git "$@"
     fi
     export _RTK_WRAP=1; exec rtk git "$@" ;;
-  *) PATH="${PATH#/opt/rtk:}"; export PATH; exec git "$@" ;;
+  *) PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec git "$@" ;;
 esac

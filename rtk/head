@@ -1,6 +1,6 @@
 #!/bin/sh
 if [ -n "$_RTK_WRAP" ]; then
-  PATH="${PATH#/opt/rtk:}"; export PATH; exec head "$@"
+  PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec head "$@"
 fi
 # Only intercept: head -N <file> or head --lines=N <file>
 # Piped usage (no file arg) passes through to real head
@@ -21,4 +21,4 @@ case "$1" in
       export _RTK_WRAP=1; exec rtk read "$@" --max-lines "$LINES"
     fi ;;
 esac
-PATH="${PATH#/opt/rtk:}"; export PATH; exec head "$@"
+PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec head "$@"

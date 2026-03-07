@@ -16,10 +16,10 @@
 # flags before pattern in its clap parser.
 
 if [ -n "$_RTK_WRAP" ]; then
-  PATH="${PATH#/opt/rtk:}"; export PATH; exec grep "$@"
+  PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec grep "$@"
 fi
 if [ $# -eq 0 ]; then
-  PATH="${PATH#/opt/rtk:}"; export PATH; exec grep
+  PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec grep
 fi
 # Piped stdin → native grep (filter mode, not workspace search)
 if [ ! -t 0 ]; then
@@ -36,9 +36,9 @@ esac
 for _a in "$@"; do
   case "$_a" in
     # These produce minimal output that rtk can't compress, or are too complex
-    -c|--count|-l|--files-with-matches|-e|--regexp) PATH="${PATH#/opt/rtk:}"; export PATH; exec grep "$@" ;;
+    -c|--count|-l|--files-with-matches|-e|--regexp) PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec grep "$@" ;;
     # Combined flags containing -c or -l conflicts
-    -[!-]*c*|-[!-]*l*) PATH="${PATH#/opt/rtk:}"; export PATH; exec grep "$@" ;;
+    -[!-]*c*|-[!-]*l*) PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec grep "$@" ;;
   esac
 done
 
@@ -95,7 +95,7 @@ done
 
 # If we couldn't extract a pattern, fall back
 if [ -z "$_pattern" ]; then
-  PATH="${PATH#/opt/rtk:}"; export PATH; exec grep "$@"
+  PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec grep "$@"
 fi
 
 export _RTK_WRAP=1

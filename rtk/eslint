@@ -1,5 +1,5 @@
 #!/bin/sh
 if [ -n "$_RTK_WRAP" ]; then
-  PATH="${PATH#/opt/rtk:}"; export PATH; exec eslint "$@"
+  PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec eslint "$@"
 fi
 export _RTK_WRAP=1; exec rtk lint "$@"

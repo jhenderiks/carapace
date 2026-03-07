@@ -6,10 +6,10 @@
 # Upstream: rtk-ai/rtk#229, #236.
 
 if [ -n "$_RTK_WRAP" ]; then
-  PATH="${PATH#/opt/rtk:}"; export PATH; exec rg "$@"
+  PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec rg "$@"
 fi
 if [ $# -eq 0 ]; then
-  PATH="${PATH#/opt/rtk:}"; export PATH; exec rg
+  PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec rg
 fi
 
 # No leading flags → straight to rtk
@@ -21,8 +21,8 @@ esac
 # Check for flags that must fall back
 for _a in "$@"; do
   case "$_a" in
-    -c|--count|-l|--files-with-matches|-e|--regexp) PATH="${PATH#/opt/rtk:}"; export PATH; exec rg "$@" ;;
-    -[!-]*c*|-[!-]*l*) PATH="${PATH#/opt/rtk:}"; export PATH; exec rg "$@" ;;
+    -c|--count|-l|--files-with-matches|-e|--regexp) PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec rg "$@" ;;
+    -[!-]*c*|-[!-]*l*) PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec rg "$@" ;;
   esac
 done
 
@@ -65,7 +65,7 @@ for _a in "$@"; do
 done
 
 if [ -z "$_pattern" ]; then
-  PATH="${PATH#/opt/rtk:}"; export PATH; exec rg "$@"
+  PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec rg "$@"
 fi
 
 export _RTK_WRAP=1

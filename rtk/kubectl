@@ -1,9 +1,9 @@
 #!/bin/sh
 if [ -n "$_RTK_WRAP" ]; then
-  PATH="${PATH#/opt/rtk:}"; export PATH; exec kubectl "$@"
+  PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec kubectl "$@"
 fi
 case "$1" in
   get|logs|describe|apply)
     export _RTK_WRAP=1; exec rtk kubectl "$@" ;;
-  *) PATH="${PATH#/opt/rtk:}"; export PATH; exec kubectl "$@" ;;
+  *) PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec kubectl "$@" ;;
 esac
