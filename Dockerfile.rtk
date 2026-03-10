@@ -1,6 +1,6 @@
 FROM rust:bookworm AS build
 
-ARG RTK_VERSION=v0.23.0
+ARG RTK_VERSION=v0.27.2
 
 RUN \
   DEBIAN_FRONTEND=noninteractive apt-get update \

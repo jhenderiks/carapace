@@ -1,5 +1,2 @@
 #!/bin/sh
-if [ -n "$_RTK_WRAP" ]; then
-  PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec prettier "$@"
-fi
-export _RTK_WRAP=1; exec rtk prettier "$@"
+exec /opt/rtk/_exec prettier "$@"

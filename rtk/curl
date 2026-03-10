@@ -1,5 +1,2 @@
 #!/bin/sh
-if [ -n "$_RTK_WRAP" ]; then
-  PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec curl "$@"
-fi
-export _RTK_WRAP=1; exec rtk curl "$@"
+exec /opt/rtk/_exec curl "$@"

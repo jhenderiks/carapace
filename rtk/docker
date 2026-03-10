@@ -1,9 +1,2 @@
 #!/bin/sh
-if [ -n "$_RTK_WRAP" ]; then
-  PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec docker "$@"
-fi
-case "$1" in
-  compose|ps|images|logs|run|build|exec)
-    export _RTK_WRAP=1; exec rtk docker "$@" ;;
-  *) PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec docker "$@" ;;
-esac
+exec /opt/rtk/_exec docker "$@"

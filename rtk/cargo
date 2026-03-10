@@ -1,9 +1,2 @@
 #!/bin/sh
-if [ -n "$_RTK_WRAP" ]; then
-  PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec cargo "$@"
-fi
-case "$1" in
-  test|build|clippy|check|install|nextest|fmt)
-    export _RTK_WRAP=1; exec rtk cargo "$@" ;;
-  *) PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec cargo "$@" ;;
-esac
+exec /opt/rtk/_exec cargo "$@"

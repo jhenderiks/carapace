@@ -1,8 +1,2 @@
 #!/bin/sh
-if [ -n "$_RTK_WRAP" ]; then
-  PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec cat "$@"
-fi
-if [ $# -eq 0 ]; then
-  PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec cat
-fi
-export _RTK_WRAP=1; exec rtk read "$@"
+exec /opt/rtk/_exec cat "$@"

@@ -1,14 +1,2 @@
 #!/bin/sh
-if [ -n "$_RTK_WRAP" ]; then
-  PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec find "$@"
-fi
-# rtk find expects: <pattern> [path]
-# Passthrough when first arg starts with - or / (native find flags/paths)
-case "$1" in
-  -* | /* | .)
-    PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec find "$@" ;;
-esac
-if [ $# -eq 0 ]; then
-  PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec find
-fi
-export _RTK_WRAP=1; exec rtk find "$@"
+exec /opt/rtk/_exec find "$@"

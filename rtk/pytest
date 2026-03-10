@@ -1,5 +1,2 @@
 #!/bin/sh
-if [ -n "$_RTK_WRAP" ]; then
-  PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec pytest "$@"
-fi
-export _RTK_WRAP=1; exec rtk pytest "$@"
+exec /opt/rtk/_exec pytest "$@"

@@ -247,40 +247,14 @@ Consider keeping them in a dedicated git repository separate from carapace, then
 
 How you structure this is entirely up to you — the mounts are just directories.
 
-### Browser Configuration
-
-The browser container exposes Chromium's CDP on port 18800. The gateway connects to it via the `carapace` network.
-
-**Default (recommended): isolated browser container**
-
-The gateway image does **not** include Chromium. Use the separate `browser` service and connect over CDP:
-
-**Isolated browser container:**
-
-```json
-{
-  "browser": {
-    "enabled": true,
-    "profiles": {
-      "openclaw": {
-        "cdpUrl": "http://172.20.0.10:18800"
-      }
-    },
-    "defaultProfile": "openclaw"
-  }
-}
-```
-
-The isolated browser automatically clears stale profile locks on startup, addressing the issue where unclean shutdowns leave `SingletonLock` files that block subsequent chromium launches.
-
 ### RTK Token Compression
 
 [rtk](https://github.com/rtk-ai/rtk) is a CLI proxy that compresses shell command output before it reaches the LLM context, reducing token usage by 40-90% on common operations (git, ls, grep, etc.).
 
 Carapace ships a companion RTK image (`ghcr.io/jhenderiks/carapace-rtk`) built from `Dockerfile.rtk`. That image contains:
 
-- the `rtk` binary (currently v0.23.0)
-- the selective wrapper scripts from `rtk/` (mounted in the gateway image at `/opt/rtk`)
+- the `rtk` binary (currently v0.27.2)
+- thin wrapper scripts from `rtk/` (mounted in the gateway image at `/opt/rtk`)
 
 The gateway image copies those artifacts during build (`ARG RTK_IMAGE=...`) so other projects can reuse the exact same RTK package without recompiling Rust or duplicating wrappers.
 
@@ -301,13 +275,10 @@ When OpenClaw's `tools.exec.pathPrepend` config points at `/opt/rtk`, agent-init
 **How it works:**
 
 1. OpenClaw prepends `/opt/rtk` to `PATH` for `exec` tool calls only (not the container's global `PATH`)
-2. Each wrapper script intercepts specific subcommands that rtk handles well
+2. Each wrapper script delegates rewrite decisions to upstream `rtk rewrite`
 3. Unrecognized subcommands/flags pass through to the real binary
-4. A recursion guard (`_RTK_WRAP` env var) prevents infinite loops when rtk internally calls the real binary
 
-**Selective routing** — wrappers only intercept known-good subcommands, matching the patterns from [rtk's official Claude Code hook](https://github.com/rtk-ai/rtk/blob/master/.claude/hooks/rtk-rewrite.sh). For example, `git status` routes through rtk, but `git clone` passes through to the real binary.
-
-**Non-obvious mappings:**
+**Common mappings:**
 
 | Command | Routes to | Why |
 |---|---|---|
@@ -315,7 +286,9 @@ When OpenClaw's `tools.exec.pathPrepend` config points at `/opt/rtk`, agent-init
 | `rg pattern` | `rtk grep pattern` | ripgrep → rtk's compact grep |
 | `eslint` | `rtk lint` | rtk's lint formatter |
 | `head -N file` | `rtk read file --max-lines N` | Only when a file arg is present (piped `head` passes through) |
-| `mypy` | `rtk mypy` | New in rtk v0.23.0 grouped type-check output |
+| `mypy` | `rtk mypy` | Grouped type-check output |
+| `aws sts get-caller-identity` | `rtk aws sts get-caller-identity` | AWS CLI output formatter |
+| `psql -c 'select 1'` | `rtk psql -c 'select 1'` | SQL output formatter |
 
 **Configuration** — add the following to your OpenClaw config and restart the gateway:
 
@@ -332,6 +305,16 @@ When OpenClaw's `tools.exec.pathPrepend` config points at `/opt/rtk`, agent-init
 **Why `pathPrepend` instead of container `PATH`?** `pathPrepend` only affects agent-initiated `exec` tool calls. Container-internal processes (OpenClaw itself, git hooks, npm scripts) still use the real binaries. This avoids subtle breakage in non-LLM contexts where compressed output would be wrong.
 
 **Tracking savings:** rtk records token savings in a SQLite database at `~/.local/share/rtk/history.db`. Run `rtk gain` inside the container to see cumulative stats, or `rtk gain --graph` for a daily breakdown. To persist this across restarts, bind-mount the directory (e.g., `./rtk-data:/home/openclaw/.local/share/rtk:rw`).
+
+**RTK config:** rtk reads its own config file for hook exclusions and telemetry:
+
+```toml
+[hooks]
+exclude_commands = ["curl", "playwright"]
+
+[telemetry]
+enabled = false
+```
 
 ## Security Model
 

@@ -1,9 +1,2 @@
 #!/bin/sh
-if [ -n "$_RTK_WRAP" ]; then
-  PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec npm "$@"
-fi
-case "$1" in
-  test) export _RTK_WRAP=1; exec rtk npm "$@" ;;
-  run)  shift; export _RTK_WRAP=1; exec rtk npm "$@" ;;
-  *) PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec npm "$@" ;;
-esac
+exec /opt/rtk/_exec npm "$@"
