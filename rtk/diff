@@ -1,8 +1,2 @@
 #!/bin/sh
-if [ -n "$_RTK_WRAP" ]; then
-  PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec diff "$@"
-fi
-if [ $# -eq 0 ]; then
-  PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec diff
-fi
-export _RTK_WRAP=1; exec rtk diff "$@"
+exec /opt/rtk/_exec diff "$@"

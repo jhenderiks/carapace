@@ -1,4 +1,4 @@
-ARG RTK_VERSION=v0.23.0
+ARG RTK_VERSION=v0.27.2
 ARG RTK_IMAGE=rtk-local
 
 FROM rust:bookworm AS rtk-local-build

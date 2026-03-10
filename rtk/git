@@ -1,26 +1,2 @@
 #!/bin/sh
-if [ -n "$_RTK_WRAP" ]; then
-  PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec git "$@"
-fi
-# Route supported subcommands through rtk for token savings.
-# For subcommands where rtk only handles a subset of flags,
-# detect unsupported flags and fall back to native git.
-case "$1" in
-  status|diff|log|add|push|pull|branch|fetch|stash|show)
-    export _RTK_WRAP=1; exec rtk git "$@" ;;
-  commit)
-    # rtk git commit only supports: -m <msg> (repeatable)
-    # Fall back for --amend, --no-edit, --fixup, --allow-empty, -a, etc.
-    _native=0
-    for _a in "$@"; do
-      case "$_a" in
-        commit|-m|--message) ;;
-        -*) _native=1; break ;;
-      esac
-    done
-    if [ "$_native" = 1 ]; then
-      PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec git "$@"
-    fi
-    export _RTK_WRAP=1; exec rtk git "$@" ;;
-  *) PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec git "$@" ;;
-esac
+exec /opt/rtk/_exec git "$@"

@@ -1,0 +1,2 @@
+#!/bin/sh
+exec /opt/rtk/_exec bunx "$@"

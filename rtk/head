@@ -1,24 +1,2 @@
 #!/bin/sh
-if [ -n "$_RTK_WRAP" ]; then
-  PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec head "$@"
-fi
-# Only intercept: head -N <file> or head --lines=N <file>
-# Piped usage (no file arg) passes through to real head
-case "$1" in
-  -[0-9]*)
-    if [ $# -ge 2 ]; then
-      LINES="${1#-}"; shift
-      export _RTK_WRAP=1; exec rtk read "$@" --max-lines "$LINES"
-    fi ;;
-  -n)
-    if [ $# -ge 3 ]; then
-      shift; LINES="$1"; shift
-      export _RTK_WRAP=1; exec rtk read "$@" --max-lines "$LINES"
-    fi ;;
-  --lines=*)
-    if [ $# -ge 2 ]; then
-      LINES="${1#--lines=}"; shift
-      export _RTK_WRAP=1; exec rtk read "$@" --max-lines "$LINES"
-    fi ;;
-esac
-PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec head "$@"
+exec /opt/rtk/_exec head "$@"

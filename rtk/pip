@@ -1,9 +1,2 @@
 #!/bin/sh
-if [ -n "$_RTK_WRAP" ]; then
-  PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec pip "$@"
-fi
-case "$1" in
-  list|outdated|install|show)
-    export _RTK_WRAP=1; exec rtk pip "$@" ;;
-  *) PATH=$(echo "$PATH" | sed "s,/opt/rtk:,,g"); export PATH; exec pip "$@" ;;
-esac
+exec /opt/rtk/_exec pip "$@"
