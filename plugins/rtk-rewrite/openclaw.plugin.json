@@ -2,7 +2,7 @@
   "id": "rtk-rewrite",
   "name": "RTK Rewrite",
   "description": "Rewrite exec commands through rtk for output compression",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "configSchema": {
     "type": "object",
     "additionalProperties": false,
@@ -16,64 +16,6 @@
         "type": "string",
         "default": "/usr/local/bin/rtk",
         "description": "Path to the rtk binary"
-      },
-      "allIntercept": {
-        "type": "array",
-        "items": { "type": "string" },
-        "default": [
-          "ls",
-          "tree",
-          "curl",
-          "wc",
-          "diff",
-          "env",
-          "wget",
-          "eslint",
-          "prettier",
-          "prisma",
-          "tsc",
-          "vitest",
-          "pytest",
-          "mypy",
-          "ruff",
-          "playwright",
-          "pip",
-          "golangci-lint"
-        ]
-      },
-      "selective": {
-        "type": "object",
-        "additionalProperties": {
-          "type": "array",
-          "items": { "type": "string" }
-        },
-        "default": {
-          "git": ["status", "diff", "log", "add", "push", "pull", "branch", "fetch", "stash", "show", "commit"],
-          "gh": ["pr", "issue", "run", "api", "release"],
-          "npm": ["test", "run"],
-          "npx": ["vitest", "vue-tsc", "tsc", "eslint", "prettier", "playwright", "prisma"],
-          "pnpm": ["test", "tsc", "lint", "playwright", "list", "ls", "outdated"],
-          "cargo": ["test", "build", "clippy", "check"],
-          "docker": ["ps", "images", "logs", "inspect"],
-          "go": ["test", "build", "vet"],
-          "next": ["dev", "build"]
-        }
-      },
-      "remapped": {
-        "type": "object",
-        "additionalProperties": { "type": "string" },
-        "default": {
-          "cat": "read",
-          "head": "read",
-          "grep": "grep",
-          "rg": "grep",
-          "eslint": "lint"
-        }
-      },
-      "skip": {
-        "type": "array",
-        "items": { "type": "string" },
-        "default": ["gh api"]
       }
     }
   }

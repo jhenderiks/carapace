@@ -1,79 +1,154 @@
 import { strict as assert } from "node:assert";
+import { execFileSync } from "node:child_process";
 
-import { applyRtkRouting, DEFAULT_RTK_CONFIG } from "./routing.js";
+import { applyRtkRouting, normalizeRtkConfig, DEFAULT_RTK_CONFIG } from "./routing.js";
+import type { RewriteOptions } from "./routing.js";
 
-const config = {
-  ...DEFAULT_RTK_CONFIG,
-  binary: "rtk",
-};
+// ---------------------------------------------------------------------------
+// normalizeRtkConfig
+// ---------------------------------------------------------------------------
 
-// --- existing baseline tests ---
-assert.equal(applyRtkRouting("ls -la", config), "rtk ls -la");
-assert.equal(applyRtkRouting("tree .", config), "rtk tree .");
+const defaults = normalizeRtkConfig(undefined);
+assert.equal(defaults.enabled, true);
+assert.equal(defaults.binary, "/usr/local/bin/rtk");
 
-assert.equal(applyRtkRouting("git status", config), "rtk git status");
-assert.equal(applyRtkRouting("git checkout main", config), null);
+const custom = normalizeRtkConfig({ enabled: false, binary: "/opt/bin/rtk" });
+assert.equal(custom.enabled, false);
+assert.equal(custom.binary, "/opt/bin/rtk");
 
-assert.equal(applyRtkRouting("cat foo.txt", config), "rtk read foo.txt");
-assert.equal(applyRtkRouting("cat", config), null);
+const partial = normalizeRtkConfig({ enabled: true });
+assert.equal(partial.binary, "/usr/local/bin/rtk");
 
-assert.equal(applyRtkRouting("rtk ls -la", config), null);
-assert.equal(applyRtkRouting("gh api /repos", config), null);
+const badTypes = normalizeRtkConfig({ enabled: "yes", binary: 42 });
+assert.equal(badTypes.enabled, true); // fallback
+assert.equal(badTypes.binary, "/usr/local/bin/rtk"); // fallback
 
-assert.equal(applyRtkRouting("FOO=bar git status", config), "FOO=bar rtk git status");
+const emptyBinary = normalizeRtkConfig({ binary: "" });
+assert.equal(emptyBinary.binary, "/usr/local/bin/rtk"); // fallback
 
-assert.equal(applyRtkRouting("ls -la | grep foo", config), "rtk ls -la | grep foo");
-assert.equal(applyRtkRouting("cat <<EOF\nfoo\nEOF", config), null);
+// ---------------------------------------------------------------------------
+// applyRtkRouting — guards (no subprocess needed)
+// ---------------------------------------------------------------------------
 
-// --- grep flag reordering ---
-// splitCommand preserves quotes, so 'foo' stays as 'foo' in the output
-assert.equal(applyRtkRouting("grep -r 'foo' /path", config), "rtk grep 'foo' /path -r");
-assert.equal(applyRtkRouting("grep -v pattern file", config), "rtk grep pattern file --invert-match");
-assert.equal(applyRtkRouting("grep -c pattern file", config), null); // -c falls back
-assert.equal(applyRtkRouting("grep -l pattern file", config), null); // -l falls back
-assert.equal(applyRtkRouting("rg pattern src/", config), "rtk grep pattern src/");
+assert.equal(applyRtkRouting("ls", { ...DEFAULT_RTK_CONFIG, enabled: false }), null);
+assert.equal(applyRtkRouting("", DEFAULT_RTK_CONFIG), null);
+assert.equal(applyRtkRouting(42 as unknown as string, DEFAULT_RTK_CONFIG), null);
 
-// --- head variants ---
-assert.equal(applyRtkRouting("head -20 file.txt", config), "rtk read file.txt --max-lines 20");
-assert.equal(applyRtkRouting("head -n 5 file.txt", config), "rtk read file.txt --max-lines 5");
-assert.equal(applyRtkRouting("head --lines=10 file.txt", config), "rtk read file.txt --max-lines 10");
-assert.equal(applyRtkRouting("head", config), null); // no args
+// ---------------------------------------------------------------------------
+// applyRtkRouting — subprocess plumbing (mocked exec)
+// ---------------------------------------------------------------------------
 
-// --- npm routing ---
-assert.equal(applyRtkRouting("npm test", config), "rtk npm test");
-assert.equal(applyRtkRouting("npm run build", config), "rtk npm build");
-assert.equal(applyRtkRouting("npm install foo", config), null); // not intercepted
+{
+  // captures the binary and args passed to exec
+  const calls: Array<{ binary: string; args: string[] }> = [];
+  const mockExec = (binary: string, args: string[]): string => {
+    calls.push({ binary, args });
+    return "rtk ls -la\n";
+  };
 
-// --- git commit edge cases ---
-assert.equal(applyRtkRouting("git commit -m 'msg'", config), "rtk git commit -m 'msg'");
-assert.equal(applyRtkRouting("git commit --amend", config), null); // --amend not allowed
-assert.equal(applyRtkRouting("git commit -am 'msg'", config), null); // -a flag not allowed
+  const config = { ...DEFAULT_RTK_CONFIG, binary: "/usr/local/bin/rtk" };
+  const result = applyRtkRouting("ls -la", config, { exec: mockExec });
 
-// --- npx/pnpm ---
-assert.equal(applyRtkRouting("npx vitest test", config), "rtk vitest run test");
-assert.equal(applyRtkRouting("npx tsc --noEmit", config), "rtk tsc --noEmit");
-assert.equal(applyRtkRouting("npx unknown-tool", config), null);
+  assert.equal(result, "rtk ls -la");
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0]!.binary, "/usr/local/bin/rtk");
+  assert.deepEqual(calls[0]!.args, ["rewrite", "ls -la"]);
+}
 
-// --- docker ---
-assert.equal(applyRtkRouting("docker ps -a", config), "rtk docker ps -a");
-assert.equal(applyRtkRouting("docker run nginx", config), null);
+{
+  // uses custom binary path from config
+  const calls: Array<{ binary: string; args: string[] }> = [];
+  const mockExec = (binary: string, args: string[]): string => {
+    calls.push({ binary, args });
+    return "rtk git status\n";
+  };
 
-// --- cargo ---
-assert.equal(applyRtkRouting("cargo test --release", config), "rtk cargo test --release");
-assert.equal(applyRtkRouting("cargo add serde", config), null);
+  const config = { enabled: true, binary: "/opt/bin/rtk" };
+  applyRtkRouting("git status", config, { exec: mockExec });
 
-// --- eslint remap (eslint removed from allIntercept, routes via remapped → lint) ---
-assert.equal(applyRtkRouting("eslint src", config), "rtk lint src");
+  assert.equal(calls[0]!.binary, "/opt/bin/rtk");
+}
 
-// --- find ---
-assert.equal(applyRtkRouting("find pattern", config), "rtk find pattern");
-assert.equal(applyRtkRouting("find /tmp", config), null); // absolute path = native find
-assert.equal(applyRtkRouting("find . -name '*.ts'", config), null); // starts with . = native find
+{
+  // returns null when rewritten output matches input (no-op rewrite)
+  const mockExec = (): string => "git checkout main";
+  const config = { ...DEFAULT_RTK_CONFIG };
+  const result = applyRtkRouting("git checkout main", config, { exec: mockExec });
 
-// --- disabled config ---
-assert.equal(applyRtkRouting("ls", { ...config, enabled: false }), null);
+  assert.equal(result, null);
+}
 
-// --- env prefix with multiple vars ---
-assert.equal(applyRtkRouting("A=1 B=2 ls -la", config), "A=1 B=2 rtk ls -la");
+{
+  // returns null when exec returns empty string
+  const mockExec = (): string => "";
+  const config = { ...DEFAULT_RTK_CONFIG };
+  const result = applyRtkRouting("some-command", config, { exec: mockExec });
 
-console.log("All tests passed.");
+  assert.equal(result, null);
+}
+
+{
+  // returns null and calls onError when exec throws
+  const errors: unknown[] = [];
+  const mockExec = (): string => {
+    throw new Error("binary not found");
+  };
+
+  const config = { ...DEFAULT_RTK_CONFIG };
+  const result = applyRtkRouting("ls", config, {
+    exec: mockExec,
+    onError: (err) => errors.push(err),
+  });
+
+  assert.equal(result, null);
+  assert.equal(errors.length, 1);
+  assert.ok(errors[0] instanceof Error);
+  assert.equal((errors[0] as Error).message, "binary not found");
+}
+
+{
+  // returns null without calling onError when exec throws and no handler provided
+  const mockExec = (): string => {
+    throw new Error("crash");
+  };
+
+  const config = { ...DEFAULT_RTK_CONFIG };
+  const result = applyRtkRouting("ls", config, { exec: mockExec });
+
+  assert.equal(result, null);
+}
+
+{
+  // trims whitespace from rewritten output
+  const mockExec = (): string => "  rtk ls -la  \n";
+  const config = { ...DEFAULT_RTK_CONFIG };
+  const result = applyRtkRouting("ls -la", config, { exec: mockExec });
+
+  assert.equal(result, "rtk ls -la");
+}
+
+// ---------------------------------------------------------------------------
+// applyRtkRouting — integration tests (require `rtk` binary on PATH)
+// ---------------------------------------------------------------------------
+
+let hasRtk = false;
+try {
+  execFileSync("rtk", ["--version"], { stdio: "ignore" });
+  hasRtk = true;
+} catch {}
+
+if (hasRtk) {
+  const config = { ...DEFAULT_RTK_CONFIG, binary: "rtk" };
+
+  // basic intercept
+  const lsResult = applyRtkRouting("ls -la", config);
+  assert.ok(lsResult !== null, "expected rtk to rewrite 'ls -la'");
+  assert.ok(lsResult.includes("rtk"), `expected rewritten command to contain 'rtk', got: ${lsResult}`);
+
+  // already-rtk command should come back unchanged
+  assert.equal(applyRtkRouting("rtk ls -la", config), null);
+
+  console.log("All tests passed (with integration tests).");
+} else {
+  console.log("All tests passed (rtk binary not available, integration tests skipped).");
+}
