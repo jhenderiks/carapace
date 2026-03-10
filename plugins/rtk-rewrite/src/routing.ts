@@ -6,6 +6,14 @@ export const DEFAULT_RTK_CONFIG: RtkConfig = {
   binary: "/usr/local/bin/rtk",
 };
 
+function defaultExec(binary: string, args: string[]): string {
+  return execFileSync(binary, args, {
+    encoding: "utf-8",
+    timeout: 5_000,
+    stdio: ["ignore", "pipe", "ignore"],
+  });
+}
+
 export function normalizeRtkConfig(rawConfig: unknown): RtkConfig {
   const config = (rawConfig as Partial<RtkConfig>) ?? {};
 
@@ -17,7 +25,18 @@ export function normalizeRtkConfig(rawConfig: unknown): RtkConfig {
   };
 }
 
-export function applyRtkRouting(command: string, config: RtkConfig): string | null {
+type ExecFn = (binary: string, args: string[]) => string;
+
+export type RewriteOptions = {
+  onError?: (error: unknown) => void;
+  exec?: ExecFn;
+};
+
+export function applyRtkRouting(
+  command: string,
+  config: RtkConfig,
+  options?: RewriteOptions,
+): string | null {
   if (!config.enabled) {
     return null;
   }
@@ -26,15 +45,13 @@ export function applyRtkRouting(command: string, config: RtkConfig): string | nu
     return null;
   }
 
+  const run = options?.exec ?? defaultExec;
   let rewritten: string;
 
   try {
-    rewritten = execFileSync(config.binary, ["rewrite", command], {
-      encoding: "utf-8",
-      timeout: 5_000,
-      stdio: ["ignore", "pipe", "ignore"],
-    }).trim();
-  } catch {
+    rewritten = run(config.binary, ["rewrite", command]).trim();
+  } catch (error: unknown) {
+    options?.onError?.(error);
     return null;
   }
 
