@@ -424,6 +424,13 @@ Carapace may ship patches for upstream dependencies when fixes haven't been rele
 
 These are applied automatically by Bun during `bun install`. When upstream releases include the fixes, the patches will be removed.
 
+## Related Projects
+
+- **[OpenClaw](https://github.com/openclaw/openclaw)** — the AI agent gateway that carapace wraps
+- **[rtk](https://github.com/rtk-ai/rtk)** — CLI output compression for LLM context (used by the `rtk-rewrite` plugin)
+- **[context-mode](https://github.com/mksglu/claude-context-mode)** — FTS5-indexed knowledge base for managing large tool outputs (used by the `context-mode` plugin)
+- **[MCP](https://modelcontextprotocol.io/)** — the Model Context Protocol that `mcp-bridge` speaks
+
 ## License
 
 [MIT](LICENSE)
