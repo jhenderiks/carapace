@@ -7,7 +7,7 @@ import {
 const DEFAULT_COMMAND = "context-mode";
 const DEFAULT_TOOL_PREFIX = "cm";
 const DEFAULT_TIMEOUT_MS = 30_000;
-const DEFAULT_SKIP_TOOLS = ["execute", "execute_file", "fetch_and_index"];
+const DEFAULT_SKIP_TOOLS = ["ctx_execute", "ctx_execute_file", "ctx_fetch_and_index"];
 
 export type RawContextModeConfig = {
   command?: unknown;

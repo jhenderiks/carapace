@@ -171,7 +171,7 @@ When this plugin is enabled, `tools.exec.pathPrepend` is not needed.
 
 Spawns the [context-mode](https://github.com/mksglu/claude-context-mode) MCP server and registers `cm_*` tools for FTS5-indexed knowledge base search. The agent can index large tool outputs and search them later, reducing context window pressure.
 
-Exposed tools: `cm_index`, `cm_search`, `cm_stats`, `cm_batch_execute`. Redundant tools (`execute`, `execute_file`, `fetch_and_index`) are skipped by default.
+Exposed tools: `cm_ctx_index`, `cm_ctx_search`, `cm_ctx_stats`, `cm_ctx_batch_execute`, `cm_ctx_doctor`, `cm_ctx_upgrade`. Redundant tools (`ctx_execute`, `ctx_execute_file`, `ctx_fetch_and_index`) are skipped by default since OpenClaw provides native equivalents.
 
 Separate from mcp-bridge to enable per-agent scoping — agents can get context-mode without other MCP servers.
 
@@ -217,19 +217,11 @@ Separate from mcp-bridge to enable per-agent scoping — agents can get context-
 
 ### UID/GID and Permissions
 
-The default container user is `1000:1000`. If you hit permission errors on mounted volumes, it's usually a UID/GID mismatch. Set the build args to match your host user:
+The container runs as the built-in `node` user (UID 1000). If you hit permission errors on mounted volumes, it's usually a UID/GID mismatch between the container user and your host. Ensure your mounted directories are owned by UID 1000, or adjust ownership on the host:
 
-```yaml
-# docker-compose.override.yml
-services:
-  gateway:
-    build:
-      args:
-        UID: 1000  # your host UID (run `id -u`)
-        GID: 1000  # your host GID (run `id -g`)
+```bash
+sudo chown -R 1000:1000 ./config ./workspace
 ```
-
-Then rebuild: `docker compose build`
 
 ### Architecture (sqlite-vec)
 
