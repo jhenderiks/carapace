@@ -167,9 +167,6 @@ function registerMcpTool(
 
   api.registerTool(tool, { optional: runtime.config.optional });
   registeredToolNames.add(openclawToolName);
-  api.logger.info(
-    `[mcp-bridge] registered tool ${openclawToolName} (${runtime.config.id})`,
-  );
 }
 
 function normalizePluginConfig(
