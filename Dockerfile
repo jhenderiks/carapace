@@ -81,6 +81,8 @@ RUN \
   && ln -s ${APP}/node_modules/sqlite-vec-linux-${SQLITE_ARCH}/vec0.so /usr/local/lib/sqlite-vec/vec0.so \
   # symlink bat (bookworm packages as batcat)
   && ln -s /usr/bin/batcat /usr/local/bin/bat \
+  # set home directory
+  && usermod -d ${HOME} node \
   # create directories
   && mkdir -p ${APP} ${HOME} \
   # set ownership
