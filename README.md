@@ -157,7 +157,7 @@ Carapace includes OpenClaw plugins in `plugins/`. Each plugin is loaded via the 
 
 Bridges [MCP](https://modelcontextprotocol.io/) stdio servers into OpenClaw agent tools. Spawns MCP servers as child processes, discovers their tools via `listTools`, and registers each as an OpenClaw tool with a configurable prefix.
 
-Currently used for [VibeKanban](https://vibekanban.com) (`vk_*` tools). Any MCP server can be added as a config entry — no code changes needed.
+Any MCP server can be added as a config entry — no code changes needed.
 
 See [`plugins/mcp-bridge/README.md`](plugins/mcp-bridge/README.md) for config details.
 
@@ -193,9 +193,9 @@ Separate from mcp-bridge to enable per-agent scoping — agents can get context-
         "enabled": true,
         "config": {
           "servers": {
-            "vk": {
-              "command": "/usr/local/bin/vibe-kanban-mcp",
-              "toolPrefix": "vk"
+            "my-server": {
+              "command": "my-mcp-server",
+              "toolPrefix": "ms"
             }
           }
         }

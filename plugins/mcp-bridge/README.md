@@ -30,11 +30,12 @@ openclaw plugins install -l /home/taka/apps/arlo/src/projects/mcp-bridge-plugin
         enabled: true,
         config: {
           servers: {
-            vk: {
-              command: "/usr/local/bin/vibe-kanban-mcp",
-              env: { VIBE_BACKEND_URL: "https://vk.pxlbyt.co" },
+            "my-server": {
+              command: "my-mcp-server",
+              args: [],
+              env: { MY_API_URL: "https://example.com" },
               lifecycle: "gateway",
-              toolPrefix: "vk",
+              toolPrefix: "ms",
               optional: false,
               timeoutMs: 30000,
               retryCount: 1,
