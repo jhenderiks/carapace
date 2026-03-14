@@ -4,9 +4,17 @@ import type {
   RuntimeLogger,
 } from "openclaw/plugin-sdk";
 import { McpServerBridge } from "./bridge.js";
+import {
+  asRecord,
+  coerceNonNegativeInt,
+  coercePositiveInt,
+  executeWithRetry,
+  formatError,
+  isPlainObject,
+  normalizeMcpResult,
+} from "./runtime.js";
 import { normalizeJsonSchema } from "./schema.js";
 import type {
-  McpCallResult,
   McpToolDefinition,
   NormalizedPluginConfig,
   NormalizedServerConfig,
@@ -147,11 +155,10 @@ function registerMcpTool(
       `MCP tool ${mcpTool.name} from server ${runtime.config.id}`,
     parameters: normalizeJsonSchema(mcpTool.inputSchema),
     async execute(_toolCallId, params) {
-      const args = asRecord(params);
       const result = await executeWithRetry(
         runtime,
         mcpTool.name,
-        args,
+        asRecord(params),
         api.logger,
       );
       return normalizeMcpResult(result, openclawToolName, runtime.config.id);
@@ -160,125 +167,7 @@ function registerMcpTool(
 
   api.registerTool(tool, { optional: runtime.config.optional });
   registeredToolNames.add(openclawToolName);
-  api.logger.info(
-    `[mcp-bridge] registered tool ${openclawToolName} (${runtime.config.id})`,
-  );
 }
-
-async function executeWithRetry(
-  runtime: ServerRuntime,
-  mcpToolName: string,
-  args: Record<string, unknown>,
-  logger: RuntimeLogger,
-): Promise<McpCallResult> {
-  const attempts = Math.max(1, runtime.config.retryCount + 1);
-
-  for (let attempt = 1; attempt <= attempts; attempt += 1) {
-    try {
-      return await runtime.bridge.callTool(mcpToolName, args);
-    } catch (error) {
-      if (attempt >= attempts) {
-        throw error;
-      }
-
-      const backoffMs = runtime.config.retryBackoffMs * attempt;
-      logger.warn(
-        `[mcp-bridge] ${runtime.config.id}.${mcpToolName} failed (attempt ${attempt}/${attempts}); reconnecting in ${backoffMs}ms: ${formatError(error)}`,
-      );
-
-      await sleep(backoffMs);
-      await runtime.bridge.reconnect();
-    }
-  }
-
-  throw new Error("unreachable");
-}
-
-function normalizeMcpResult(
-  result: McpCallResult,
-  toolName: string,
-  serverId: string,
-): {
-  content: Array<{ type: "text"; text: string }>;
-  details: Record<string, unknown>;
-} {
-  const content = normalizeContent(result?.content);
-  const details: Record<string, unknown> = {};
-
-  if (result?.structuredContent !== undefined) {
-    details.structuredContent = result.structuredContent;
-  }
-
-  if (result?.isError) {
-    const prefixed = content.length
-      ? content
-      : [
-          {
-            type: "text" as const,
-            text: "MCP server returned an error with empty content.",
-          },
-        ];
-
-    return {
-      content: [
-        {
-          type: "text",
-          text: `[mcp-bridge:${serverId}:${toolName}] upstream error`,
-        },
-        ...prefixed,
-      ],
-      details,
-    };
-  }
-
-  if (content.length > 0) {
-    return {
-      content,
-      details,
-    };
-  }
-
-  return {
-    content: [
-      {
-        type: "text",
-        text: "MCP tool returned no textual content.",
-      },
-    ],
-    details,
-  };
-}
-
-function normalizeContent(
-  content: unknown,
-): Array<{ type: "text"; text: string }> {
-  if (!Array.isArray(content)) {
-    return [];
-  }
-
-  const out: Array<{ type: "text"; text: string }> = [];
-
-  for (const item of content) {
-    if (
-      isPlainObject(item) &&
-      item.type === "text" &&
-      typeof item.text === "string"
-    ) {
-      out.push({ type: "text", text: item.text });
-      continue;
-    }
-
-    if (isPlainObject(item) && typeof item.text === "string") {
-      out.push({ type: "text", text: item.text });
-      continue;
-    }
-
-    out.push({ type: "text", text: safeJson(item) });
-  }
-
-  return out;
-}
-
 
 function normalizePluginConfig(
   pluginConfig: Record<string, unknown> | undefined,
@@ -361,49 +250,4 @@ function normalizeServerConfig(
     retryCount,
     retryBackoffMs,
   };
-}
-
-function asRecord(value: unknown): Record<string, unknown> {
-  return isPlainObject(value) ? value : {};
-}
-
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-}
-
-function coercePositiveInt(value: unknown, fallback: number): number {
-  if (typeof value !== "number" || !Number.isFinite(value)) {
-    return fallback;
-  }
-  const n = Math.floor(value);
-  return n > 0 ? n : fallback;
-}
-
-function coerceNonNegativeInt(value: unknown, fallback: number): number {
-  if (typeof value !== "number" || !Number.isFinite(value)) {
-    return fallback;
-  }
-  const n = Math.floor(value);
-  return n >= 0 ? n : fallback;
-}
-
-function safeJson(value: unknown): string {
-  try {
-    return JSON.stringify(value);
-  } catch {
-    return String(value);
-  }
-}
-
-function formatError(error: unknown): string {
-  if (error instanceof Error) {
-    return error.message;
-  }
-  return String(error);
-}
-
-async function sleep(ms: number): Promise<void> {
-  await new Promise<void>((resolve) => {
-    setTimeout(resolve, ms);
-  });
 }

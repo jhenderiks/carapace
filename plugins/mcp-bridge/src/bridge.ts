@@ -1,7 +1,12 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import type { RuntimeLogger } from "openclaw/plugin-sdk";
-import type { McpCallResult, McpToolDefinition, NormalizedServerConfig } from "./types.js";
+import { formatError, isPlainObject } from "./runtime.js";
+import type {
+  McpCallResult,
+  McpToolDefinition,
+  NormalizedServerConfig,
+} from "./types.js";
 
 const PLUGIN_VERSION = "0.1.0";
 
@@ -29,7 +34,11 @@ export class McpServerBridge {
         command: this.config.command,
         args: this.config.args,
         env: {
-          ...Object.fromEntries(Object.entries(process.env).filter(([, value]) => typeof value === "string") as Array<[string, string]>),
+          ...Object.fromEntries(
+            Object.entries(process.env).filter(([, value]) => typeof value === "string") as Array<
+              [string, string]
+            >,
+          ),
           ...this.config.env,
         },
       });
@@ -39,7 +48,11 @@ export class McpServerBridge {
         version: PLUGIN_VERSION,
       });
 
-      await this.withTimeout(client.connect(transport), this.config.timeoutMs, "connect");
+      await this.withTimeout(
+        client.connect(transport),
+        this.config.timeoutMs,
+        "connect",
+      );
 
       this.client = client;
       this.transport = transport;
@@ -89,7 +102,10 @@ export class McpServerBridge {
     return output;
   }
 
-  async callTool(name: string, args: Record<string, unknown>): Promise<McpCallResult> {
+  async callTool(
+    name: string,
+    args: Record<string, unknown>,
+  ): Promise<McpCallResult> {
     await this.connect();
 
     try {
@@ -114,8 +130,12 @@ export class McpServerBridge {
   }
 
   async disconnect(): Promise<void> {
-    const client = this.client as { close?: () => Promise<void> | void } | undefined;
-    const transport = this.transport as { close?: () => Promise<void> | void } | undefined;
+    const client = this.client as
+      | { close?: () => Promise<void> | void }
+      | undefined;
+    const transport = this.transport as
+      | { close?: () => Promise<void> | void }
+      | undefined;
 
     this.markDisconnected();
 
@@ -142,7 +162,11 @@ export class McpServerBridge {
     this.connectPromise = undefined;
   }
 
-  private async withTimeout<T>(promise: Promise<T>, timeoutMs: number, op: string): Promise<T> {
+  private async withTimeout<T>(
+    promise: Promise<T>,
+    timeoutMs: number,
+    op: string,
+  ): Promise<T> {
     const ms = Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : 30_000;
 
     let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
@@ -153,7 +177,9 @@ export class McpServerBridge {
         new Promise<T>((_resolve, reject) => {
           timeoutHandle = setTimeout(() => {
             reject(
-              new Error(`[mcp-bridge] ${this.serverId} ${op} timed out after ${ms}ms`),
+              new Error(
+                `[mcp-bridge] ${this.serverId} ${op} timed out after ${ms}ms`,
+              ),
             );
           }, ms);
         }),
@@ -164,15 +190,4 @@ export class McpServerBridge {
       }
     }
   }
-}
-
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-}
-
-function formatError(error: unknown): string {
-  if (error instanceof Error) {
-    return error.message;
-  }
-  return String(error);
 }

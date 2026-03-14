@@ -10,6 +10,10 @@ Carapace wraps OpenClaw in a security-focused container with sensible defaults: 
 - [Included Tools](#included-tools)
 - [Quick Start](#quick-start)
 - [Architecture](#architecture)
+- [Plugins](#plugins)
+  - [mcp-bridge](#mcp-bridge)
+  - [rtk-rewrite](#rtk-rewrite)
+  - [context-mode](#context-mode)
 - [Customization](#customization)
   - [UID/GID and Permissions](#uidgid-and-permissions)
   - [Architecture (sqlite-vec)](#architecture-sqlite-vec)
@@ -145,23 +149,79 @@ Everything else under `/home/openclaw` is a 2GB tmpfs — it resets on restart. 
 - **gateway** — the main OpenClaw process. Runs the agent, connects to messaging channels, serves the gateway API on port 18789.
 - **cli** — an ephemeral container for running `openclaw` CLI commands. Shares the network with the gateway and mounts the config directory.
 
+## Plugins
+
+Carapace includes OpenClaw plugins in `plugins/`. Each plugin is loaded via the gateway config's `plugins.load.paths` and `plugins.allow` lists, and can be scoped per-agent using `tools.deny`.
+
+### mcp-bridge
+
+Bridges [MCP](https://modelcontextprotocol.io/) stdio servers into OpenClaw agent tools. Spawns MCP servers as child processes, discovers their tools via `listTools`, and registers each as an OpenClaw tool with a configurable prefix.
+
+Any MCP server can be added as a config entry — no code changes needed.
+
+See [`plugins/mcp-bridge/README.md`](plugins/mcp-bridge/README.md) for config details.
+
+### rtk-rewrite
+
+Replaces rtk's PATH-prepend shell wrappers with a `before_tool_call` hook. Intercepts `exec` tool calls and rewrites commands through rtk for token compression — same routing logic as the wrapper scripts, but in TypeScript with no PATH manipulation.
+
+When this plugin is enabled, `tools.exec.pathPrepend` is not needed.
+
+### context-mode
+
+Spawns the [context-mode](https://github.com/mksglu/claude-context-mode) MCP server and registers `cm_*` tools for FTS5-indexed knowledge base search. The agent can index large tool outputs and search them later, reducing context window pressure.
+
+All context-mode tools are exposed with the `cm_` prefix (e.g. `cm_ctx_index`, `cm_ctx_search`, `cm_ctx_batch_execute`, `cm_ctx_execute`). Tools can be skipped via the `skipTools` config array.
+
+Separate from mcp-bridge to enable per-agent scoping — agents can get context-mode without other MCP servers.
+
+### Plugin config example
+
+```json5
+{
+  "plugins": {
+    "allow": ["mcp-bridge", "rtk-rewrite", "context-mode"],
+    "load": {
+      "paths": [
+        "/opt/openclaw/plugins/mcp-bridge",
+        "/opt/openclaw/plugins/rtk-rewrite",
+        "/opt/openclaw/plugins/context-mode"
+      ]
+    },
+    "entries": {
+      "mcp-bridge": {
+        "enabled": true,
+        "config": {
+          "servers": {
+            "my-server": {
+              "command": "my-mcp-server",
+              "toolPrefix": "ms"
+            }
+          }
+        }
+      },
+      "rtk-rewrite": { "enabled": true },
+      "context-mode": {
+        "enabled": true,
+        "config": {
+          "command": "context-mode",
+          "toolPrefix": "cm"
+        }
+      }
+    }
+  }
+}
+```
+
 ## Customization
 
 ### UID/GID and Permissions
 
-The default container user is `1000:1000`. If you hit permission errors on mounted volumes, it's usually a UID/GID mismatch. Set the build args to match your host user:
+The container runs as the built-in `node` user (UID 1000). If you hit permission errors on mounted volumes, it's usually a UID/GID mismatch between the container user and your host. Ensure your mounted directories are owned by UID 1000, or adjust ownership on the host:
 
-```yaml
-# docker-compose.override.yml
-services:
-  gateway:
-    build:
-      args:
-        UID: 1000  # your host UID (run `id -u`)
-        GID: 1000  # your host GID (run `id -g`)
+```bash
+sudo chown -R 1000:1000 ./config ./workspace
 ```
-
-Then rebuild: `docker compose build`
 
 ### Architecture (sqlite-vec)
 
@@ -270,13 +330,11 @@ RTK_IMAGE=ghcr.io/jhenderiks/carapace-rtk:latest docker compose build
 
 If `RTK_IMAGE` is omitted, the Dockerfile falls back to a local `rtk-local` build stage and compiles rtk from source.
 
-When OpenClaw's `tools.exec.pathPrepend` config points at `/opt/rtk`, agent-initiated commands are transparently routed through rtk — the LLM only ever sees compressed output.
+**Two integration modes** (use one, not both):
 
-**How it works:**
+**1. Plugin (recommended):** The `rtk-rewrite` plugin intercepts `exec` tool calls via a `before_tool_call` hook and rewrites commands through rtk. No PATH manipulation needed. See [rtk-rewrite](#rtk-rewrite).
 
-1. OpenClaw prepends `/opt/rtk` to `PATH` for `exec` tool calls only (not the container's global `PATH`)
-2. Each wrapper script delegates rewrite decisions to upstream `rtk rewrite`
-3. Unrecognized subcommands/flags pass through to the real binary
+**2. PATH prepend (legacy):** Set `tools.exec.pathPrepend` to `["/opt/rtk"]` in your OpenClaw config. Shell wrapper scripts intercept commands via PATH ordering.
 
 **Common mappings:**
 
@@ -290,7 +348,7 @@ When OpenClaw's `tools.exec.pathPrepend` config points at `/opt/rtk`, agent-init
 | `aws sts get-caller-identity` | `rtk aws sts get-caller-identity` | AWS CLI output formatter |
 | `psql -c 'select 1'` | `rtk psql -c 'select 1'` | SQL output formatter |
 
-**Configuration** — add the following to your OpenClaw config and restart the gateway:
+**Configuration (PATH prepend mode)** — add the following to your OpenClaw config and restart the gateway:
 
 ```json
 {
@@ -303,6 +361,8 @@ When OpenClaw's `tools.exec.pathPrepend` config points at `/opt/rtk`, agent-init
 ```
 
 **Why `pathPrepend` instead of container `PATH`?** `pathPrepend` only affects agent-initiated `exec` tool calls. Container-internal processes (OpenClaw itself, git hooks, npm scripts) still use the real binaries. This avoids subtle breakage in non-LLM contexts where compressed output would be wrong.
+
+If using the `rtk-rewrite` plugin, `pathPrepend` is not needed — the plugin handles all command rewriting via hooks.
 
 **Tracking savings:** rtk records token savings in a SQLite database at `~/.local/share/rtk/history.db`. Run `rtk gain` inside the container to see cumulative stats, or `rtk gain --graph` for a daily breakdown. To persist this across restarts, bind-mount the directory (e.g., `./rtk-data:/home/openclaw/.local/share/rtk:rw`).
 
@@ -355,6 +415,13 @@ Carapace may ship patches for upstream dependencies when fixes haven't been rele
 | `openclaw@2026.2.25` | `patches/openclaw@2026.2.25.patch` | Mattermost inbound file attachments silently dropped when `baseUrl` is a private/LAN IP — adds `ssrfPolicy: { allowPrivateNetwork: true }` to `fetchRemoteMedia()` | [#25650](https://github.com/openclaw/openclaw/issues/25650), [#19396](https://github.com/openclaw/openclaw/issues/19396) |
 
 These are applied automatically by Bun during `bun install`. When upstream releases include the fixes, the patches will be removed.
+
+## Related Projects
+
+- **[OpenClaw](https://github.com/openclaw/openclaw)** — the AI agent gateway that carapace wraps
+- **[rtk](https://github.com/rtk-ai/rtk)** — CLI output compression for LLM context (used by the `rtk-rewrite` plugin)
+- **[context-mode](https://github.com/mksglu/claude-context-mode)** — FTS5-indexed knowledge base for managing large tool outputs (used by the `context-mode` plugin)
+- **[MCP](https://modelcontextprotocol.io/)** — the Model Context Protocol that `mcp-bridge` speaks
 
 ## License
 

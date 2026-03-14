@@ -11,7 +11,8 @@ OpenClaw plugin that bridges MCP stdio servers into agent tools.
 - ✅ Retry once after reconnect on tool call failure
 - ✅ Graceful disconnect on `gateway_stop`
 - ⚠️ `lifecycle: "session"` is currently treated as shared/gateway lifecycle
-- 🚧 RTK hook + context-mode persistence hooks are planned for later phases
+
+> **Note:** RTK command rewriting was originally planned here but shipped as a standalone plugin (`rtk-rewrite`). Context-mode also shipped as a separate plugin (`context-mode`) — see `plugins/context-mode/`.
 
 ## Install (linked local plugin)
 
@@ -29,11 +30,12 @@ openclaw plugins install -l /home/taka/apps/arlo/src/projects/mcp-bridge-plugin
         enabled: true,
         config: {
           servers: {
-            vk: {
-              command: "/usr/local/bin/vibe-kanban-mcp",
-              env: { VIBE_BACKEND_URL: "https://vk.pxlbyt.co" },
+            "my-server": {
+              command: "my-mcp-server",
+              args: [],
+              env: { MY_API_URL: "https://example.com" },
               lifecycle: "gateway",
-              toolPrefix: "vk",
+              toolPrefix: "ms",
               optional: false,
               timeoutMs: 30000,
               retryCount: 1,

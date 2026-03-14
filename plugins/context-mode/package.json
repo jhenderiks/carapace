@@ -1,0 +1,10 @@
+{
+  "name": "@jhenderiks/context-mode",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "OpenClaw context-mode plugin",
+  "openclaw": {
+    "extensions": ["./index.ts"]
+  }
+}
