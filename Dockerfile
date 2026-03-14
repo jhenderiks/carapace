@@ -39,6 +39,7 @@ RUN \
     jq \
     make \
     openssh-client \
+    python-is-python3 \
     python3 \
     python3-pip \
     ripgrep \
@@ -68,7 +69,7 @@ RUN \
   && pip install --break-system-packages yt-dlp \
   # install bun
   && npm i -g bun npm \
-  # symlink fdfind to fs
+  # symlink fdfind to fd
   && ln -sf /usr/bin/fdfind /usr/local/bin/fd \
   # install eza
   && wget -qO /tmp/eza.tar.gz "https://github.com/eza-community/eza/releases/latest/download/eza_${ARCH}-unknown-linux-gnu.tar.gz" \
