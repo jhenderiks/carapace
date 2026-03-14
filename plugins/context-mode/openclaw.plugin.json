@@ -1,0 +1,45 @@
+{
+  "id": "context-mode",
+  "name": "Context Mode",
+  "description": "FTS5-indexed knowledge base for large tool outputs",
+  "version": "0.1.0",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "command": {
+        "type": "string",
+        "default": "context-mode",
+        "description": "Command to spawn the context-mode MCP server"
+      },
+      "args": {
+        "type": "array",
+        "items": { "type": "string" },
+        "default": [],
+        "description": "Arguments for the MCP server command"
+      },
+      "env": {
+        "type": "object",
+        "additionalProperties": { "type": "string" },
+        "default": {},
+        "description": "Additional env vars for the MCP server process"
+      },
+      "toolPrefix": {
+        "type": "string",
+        "default": "cm",
+        "description": "Prefix for registered tool names"
+      },
+      "skipTools": {
+        "type": "array",
+        "items": { "type": "string" },
+        "default": ["execute", "execute_file", "fetch_and_index"],
+        "description": "MCP tool names to skip (redundant with OpenClaw builtins)"
+      },
+      "timeoutMs": {
+        "type": "number",
+        "default": 30000,
+        "description": "Timeout for MCP calls"
+      }
+    }
+  }
+}
