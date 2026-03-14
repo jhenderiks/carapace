@@ -12,30 +12,36 @@ COPY rtk /opt/rtk
 
 FROM ${RTK_IMAGE} AS rtk
 
-FROM platformatic/node-caged:slim
+FROM node:24-bookworm-slim
 
 EXPOSE 18789
 
 RUN \
   DEBIAN_FRONTEND=noninteractive apt-get update \
   && apt-get install -y --no-install-recommends \
-    bat \
     ca-certificates \
     curl \
+  && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+    -o /usr/share/keyrings/githubcli-archive-keyring.gpg \
+  && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
+    > /etc/apt/sources.list.d/github-cli.list \
+  && apt-get install -y --no-install-recommends \
+    bash \
+    bat \
+    coreutils \
     fd-find \
     ffmpeg \
     fzf \
     g++ \
-    git \
     gh \
+    git \
     imagemagick \
     jq \
     make \
-    python-is-python3 \
+    openssh-client \
     python3 \
     python3-pip \
     ripgrep \
-    ssh \
     trash-cli \
     unzip \
     wget
@@ -51,14 +57,6 @@ RUN \
 #     nmap \
 #     traceroute
 
-# install rtk
-COPY --from=rtk /usr/local/bin/rtk /usr/local/bin/rtk
-# install uv
-COPY --from=astral/uv:0.10.5 /uv /uvx /usr/local/bin/
-
-ARG UID=1000
-ARG GID=1000
-
 ARG APP=/opt/openclaw
 ARG HOME=/home/openclaw
 
@@ -69,7 +67,9 @@ RUN \
   # install yt-dlp (youtube transcript/media extraction)
   && pip install --break-system-packages yt-dlp \
   # install bun
-  && npm i -g bun \
+  && npm i -g bun npm \
+  # symlink fdfind to fs
+  && ln -sf /usr/bin/fdfind /usr/local/bin/fd \
   # install eza
   && wget -qO /tmp/eza.tar.gz "https://github.com/eza-community/eza/releases/latest/download/eza_${ARCH}-unknown-linux-gnu.tar.gz" \
   && tar -xzf /tmp/eza.tar.gz -C /usr/local/bin/ \
@@ -80,17 +80,12 @@ RUN \
   && ln -s ${APP}/node_modules/sqlite-vec-linux-${SQLITE_ARCH}/vec0.so /usr/local/lib/sqlite-vec/vec0.so \
   # symlink bat (bookworm packages as batcat)
   && ln -s /usr/bin/batcat /usr/local/bin/bat \
-  # add user & group if not exists
-  && getent group ${GID} >/dev/null || groupadd -g ${GID} openclaw \
-  && getent passwd ${UID} >/dev/null || useradd -m -u ${UID} -g ${GID} openclaw \
-  # set home directory
-  && usermod -d ${HOME} $(id -un ${UID}) \
   # create directories
   && mkdir -p ${APP} ${HOME} \
   # set ownership
-  && chown -R ${UID}:${GID} ${APP} ${HOME}
+  && chown -R node: ${APP} ${HOME}
 
-USER ${UID}:${GID}
+USER node
 
 ENV HOME=${HOME}
 ENV PATH=${APP}/node_modules/.bin:/usr/lib/cargo/bin:$PATH
@@ -98,12 +93,15 @@ ENV PATH=${APP}/node_modules/.bin:/usr/lib/cargo/bin:$PATH
 ENV OPENCLAW_STATE_DIR=${HOME}/.openclaw
 ENV OPENCLAW_WORKSPACE_DIR=${OPENCLAW_STATE_DIR}/workspace
 
+COPY --from=astral/uv:0.10.5 /uv /uvx /usr/local/bin/
+COPY --from=rtk /usr/local/bin/rtk /usr/local/bin/rtk
+COPY --from=rtk /opt/rtk /opt/rtk
+
 WORKDIR ${APP}
 
-COPY --chown=${UID}:${GID} bun.lock package.json ./
-COPY --chown=${UID}:${GID} patches patches
-COPY --chown=${UID}:${GID} plugins plugins
-COPY --from=rtk --chown=${UID}:${GID} /opt/rtk /opt/rtk
+COPY --chown=node: bun.lock package.json ./
+COPY --chown=node: patches patches
+COPY --chown=node: plugins plugins
 
 RUN bun i --frozen-lockfile --backend=copyfile \
   # OpenClaw blocks world-writable plugin files; normalize modes after install
