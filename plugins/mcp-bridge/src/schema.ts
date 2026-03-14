@@ -1,3 +1,5 @@
+import { isPlainObject } from "./runtime.js";
+
 export function normalizeJsonSchema(inputSchema: unknown): Record<string, unknown> {
   if (!isPlainObject(inputSchema)) {
     return {
@@ -80,8 +82,4 @@ export function deepNormalizeSchema(
   }
 
   return out;
-}
-
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
