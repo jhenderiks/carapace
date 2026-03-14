@@ -171,7 +171,7 @@ When this plugin is enabled, `tools.exec.pathPrepend` is not needed.
 
 Spawns the [context-mode](https://github.com/mksglu/claude-context-mode) MCP server and registers `cm_*` tools for FTS5-indexed knowledge base search. The agent can index large tool outputs and search them later, reducing context window pressure.
 
-Exposed tools: `cm_ctx_index`, `cm_ctx_search`, `cm_ctx_stats`, `cm_ctx_batch_execute`, `cm_ctx_doctor`, `cm_ctx_upgrade`. Redundant tools (`ctx_execute`, `ctx_execute_file`, `ctx_fetch_and_index`) are skipped by default since OpenClaw provides native equivalents.
+All context-mode tools are exposed with the `cm_` prefix (e.g. `cm_ctx_index`, `cm_ctx_search`, `cm_ctx_batch_execute`, `cm_ctx_execute`). Tools can be skipped via the `skipTools` config array.
 
 Separate from mcp-bridge to enable per-agent scoping — agents can get context-mode without other MCP servers.
 
