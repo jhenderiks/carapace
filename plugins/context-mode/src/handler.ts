@@ -9,8 +9,6 @@ import {
 } from "../../mcp-bridge/index.js";
 import { normalizeContextModeConfig, toServerConfig } from "./types.js";
 
-const BOOTSTRAP_BRIDGE_KEY = "__bootstrap__";
-
 type CachedToolDefs = Awaited<ReturnType<McpServerBridge["listTools"]>>;
 
 // Module-level bridge cache: one MCP process per agent workspace.
@@ -43,9 +41,13 @@ export default function register(api: OpenClawPluginApi): void {
       const tools = await tempBridge.listTools();
       cachedToolDefs = tools;
 
-      // Don't disconnect — this bridge may be reused if the default agent
-      // has the same workspace. Store it with a sentinel key.
-      bridgeCache.set(BOOTSTRAP_BRIDGE_KEY, tempBridge);
+      // Disconnect the bootstrap bridge — it was only needed for listTools().
+      // Per-agent bridges are created on demand in getOrCreateBridge().
+      try {
+        await tempBridge.disconnect();
+      } catch {
+        // best-effort cleanup
+      }
 
       return tools;
     })();
