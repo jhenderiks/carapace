@@ -169,9 +169,9 @@ When this plugin is enabled, `tools.exec.pathPrepend` is not needed.
 
 ### context-mode
 
-Spawns the [context-mode](https://github.com/mksglu/claude-context-mode) MCP server and registers `cm_*` tools for FTS5-indexed knowledge base search. Use it for the workflows rtk does not cover well: file processing, indexing/search, fetch-and-index, and other retrieval-heavy flows.
+Spawns the [context-mode](https://github.com/mksglu/claude-context-mode) MCP server and registers `cm_*` tools for FTS5-indexed knowledge base search. In carapace, this is used for the workflows rtk does not cover well: file processing, indexing/search, fetch-and-index, and other retrieval-heavy flows.
 
-All context-mode tools are exposed with the `cm_` prefix (e.g. `cm_ctx_index`, `cm_ctx_search`, `cm_ctx_batch_execute`, `cm_ctx_execute`). Tools can be skipped via the `skipTools` config array. In carapace, the intended split is: rtk for rtk-eligible shell commands, context-mode for everything else.
+All context-mode tools are exposed with the `cm_` prefix (e.g. `cm_ctx_index`, `cm_ctx_search`, `cm_ctx_batch_execute`, `cm_ctx_execute`). Tools can be skipped via the `skipTools` config array. In the shipped carapace image, `cm_ctx_execute` and `cm_ctx_batch_execute` are disabled by default so shell execution goes through `exec` + rtk, while context-mode handles everything else.
 
 Separate from mcp-bridge to enable per-agent scoping — agents can get context-mode without other MCP servers.
 
@@ -205,7 +205,8 @@ Separate from mcp-bridge to enable per-agent scoping — agents can get context-
         "enabled": true,
         "config": {
           "command": "context-mode",
-          "toolPrefix": "cm"
+          "toolPrefix": "cm",
+          "skipTools": ["execute", "batch_execute"]
         }
       }
     }
@@ -280,9 +281,9 @@ The base compose leaves most of `/home/openclaw` as ephemeral tmpfs — it reset
 
 These are all optional — only add what your use case actually needs.
 
-**Workspace-local XDG paths (recommended):** for sandboxed agent commands, set XDG paths to the workspace root so tool state lands in one stable place instead of leaking into repo workdirs when a runtime overrides `HOME` to the current workdir.
+**Workspace-local XDG paths (baked into the image):** sandboxed agent commands set XDG paths to the workspace root so tool state lands in one stable place instead of leaking into repo workdirs when a runtime overrides `HOME` to the current workdir.
 
-Recommended values:
+Values used in carapace:
 
 - `XDG_DATA_HOME=/workspaces/arlo/.local/share`
 - `XDG_CONFIG_HOME=/workspaces/arlo/.local/config`
@@ -342,11 +343,11 @@ If `RTK_IMAGE` is omitted, the Dockerfile falls back to a local `rtk-local` buil
 
 **Two integration modes** (use one, not both):
 
-**1. Plugin (recommended):** The `rtk-rewrite` plugin intercepts `exec` tool calls via a `before_tool_call` hook and rewrites commands through rtk. No PATH manipulation needed. See [rtk-rewrite](#rtk-rewrite).
+**1. Plugin (carapace default):** The `rtk-rewrite` plugin intercepts `exec` tool calls via a `before_tool_call` hook and rewrites commands through rtk. No PATH manipulation needed. See [rtk-rewrite](#rtk-rewrite).
 
 **2. PATH prepend (legacy):** Set `tools.exec.pathPrepend` to `["/opt/rtk"]` in your OpenClaw config. Shell wrapper scripts intercept commands via PATH ordering.
 
-**Recommended split:** use rtk for shell commands it can rewrite/compress well. Use context-mode for the things rtk does not solve well — file processing, indexing/search, fetch-and-index, and retrieval-heavy workflows.
+**Built-in split:** shell commands go through `exec` + rtk. Context-mode is kept for the things rtk does not solve well — file processing, indexing/search, fetch-and-index, and retrieval-heavy workflows. To enforce that split, carapace disables `cm_ctx_execute` and `cm_ctx_batch_execute` by default.
 
 **Common mappings:**
 
