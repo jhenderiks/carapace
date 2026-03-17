@@ -1,4 +1,4 @@
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import type {
   AnyAgentTool,
@@ -66,8 +66,9 @@ function isSandboxContainerRunning(
   logger: RuntimeLogger,
 ): boolean {
   try {
-    const output = execSync(
-      `docker inspect --format='{{.State.Running}}' ${containerName}`,
+    const output = execFileSync(
+      "docker",
+      ["inspect", "--format={{.State.Running}}", containerName],
       {
         stdio: ["ignore", "pipe", "ignore"],
         encoding: "utf-8",
