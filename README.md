@@ -169,9 +169,9 @@ When this plugin is enabled, `tools.exec.pathPrepend` is not needed.
 
 ### context-mode
 
-Spawns the [context-mode](https://github.com/mksglu/claude-context-mode) MCP server and registers `cm_*` tools for FTS5-indexed knowledge base search. The agent can index large tool outputs and search them later, reducing context window pressure.
+Spawns the [context-mode](https://github.com/mksglu/claude-context-mode) MCP server and registers `cm_*` tools for FTS5-indexed knowledge base search. Use it for the workflows rtk does not cover well: file processing, indexing/search, fetch-and-index, and other retrieval-heavy flows.
 
-All context-mode tools are exposed with the `cm_` prefix (e.g. `cm_ctx_index`, `cm_ctx_search`, `cm_ctx_batch_execute`, `cm_ctx_execute`). Tools can be skipped via the `skipTools` config array.
+All context-mode tools are exposed with the `cm_` prefix (e.g. `cm_ctx_index`, `cm_ctx_search`, `cm_ctx_batch_execute`, `cm_ctx_execute`). Tools can be skipped via the `skipTools` config array. In carapace, the intended split is: rtk for rtk-eligible shell commands, context-mode for everything else.
 
 Separate from mcp-bridge to enable per-agent scoping — agents can get context-mode without other MCP servers.
 
@@ -335,6 +335,8 @@ If `RTK_IMAGE` is omitted, the Dockerfile falls back to a local `rtk-local` buil
 **1. Plugin (recommended):** The `rtk-rewrite` plugin intercepts `exec` tool calls via a `before_tool_call` hook and rewrites commands through rtk. No PATH manipulation needed. See [rtk-rewrite](#rtk-rewrite).
 
 **2. PATH prepend (legacy):** Set `tools.exec.pathPrepend` to `["/opt/rtk"]` in your OpenClaw config. Shell wrapper scripts intercept commands via PATH ordering.
+
+**Recommended split:** use rtk for shell commands it can rewrite/compress well. Use context-mode for the things rtk does not solve well — file processing, indexing/search, fetch-and-index, and retrieval-heavy workflows.
 
 **Common mappings:**
 
