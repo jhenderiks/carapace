@@ -268,6 +268,11 @@ export default function register(api: OpenClawPluginApi): void {
     const workspaceDir = ctx.workspaceDir ?? "/workspace";
 
     if (!cachedToolDefs) {
+      void ensureToolDefs().catch((error) => {
+        api.logger.warn(
+          `[context-mode] background tool definition retry failed: ${formatError(error)}`,
+        );
+      });
       api.logger.warn("[context-mode] tool definitions not yet available — skipping");
       return null;
     }
