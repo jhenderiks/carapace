@@ -206,7 +206,7 @@ Separate from mcp-bridge to enable per-agent scoping — agents can get context-
         "config": {
           "command": "context-mode",
           "toolPrefix": "cm",
-          "skipTools": ["execute", "batch_execute"]
+          "skipTools": ["ctx_execute", "ctx_batch_execute"]
         }
       }
     }
