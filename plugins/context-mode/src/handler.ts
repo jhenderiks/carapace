@@ -84,38 +84,6 @@ function isSandboxContainerRunning(
   }
 }
 
-function resolveSandboxContainerWorkdir(
-  containerName: string,
-  logger: RuntimeLogger,
-): string | null {
-  try {
-    const output = execFileSync(
-      "docker",
-      ["inspect", "--format={{.Config.WorkingDir}}", containerName],
-      {
-        stdio: ["ignore", "pipe", "ignore"],
-        encoding: "utf-8",
-      },
-    );
-
-    const workdir = output.trim();
-
-    if (!workdir) {
-      logger.warn(
-        `[context-mode] sandbox container "${containerName}" has no working dir configured`,
-      );
-      return null;
-    }
-
-    return workdir;
-  } catch (error) {
-    logger.warn(
-      `[context-mode] failed to read sandbox container workdir "${containerName}": ${formatError(error)}`,
-    );
-    return null;
-  }
-}
-
 function resolveSandboxContainerName(
   registryPath: string,
   agentId: string,
@@ -262,16 +230,13 @@ export default function register(api: OpenClawPluginApi): void {
         );
       }
 
-      const sandboxWorkspaceDir =
-        resolveSandboxContainerWorkdir(containerName, api.logger) ?? "/workspace";
-
       serverConfig = buildSandboxServerConfig(
         baseServerConfig,
         containerName,
       );
 
       api.logger.info(
-        `[context-mode] sandbox exec: ${agentId} → ${containerName} (${sandboxWorkspaceDir})`,
+        `[context-mode] sandbox exec: ${agentId} → ${containerName}`,
       );
     } else {
       serverConfig = baseServerConfig;
