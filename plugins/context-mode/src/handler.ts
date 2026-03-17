@@ -65,14 +65,7 @@ export default function register(api: OpenClawPluginApi): void {
       return existingBridge;
     }
 
-    const baseServerConfig = toServerConfig(config);
-    const serverConfig = {
-      ...baseServerConfig,
-      env: {
-        ...baseServerConfig.env,
-        CLAUDE_PROJECT_DIR: workspaceDir,
-      },
-    };
+    const serverConfig = toServerConfig(config);
 
     const bridge = new McpServerBridge(
       `${serverConfig.id}-${workspaceDir}`,
