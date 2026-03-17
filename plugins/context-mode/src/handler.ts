@@ -264,15 +264,11 @@ export default function register(api: OpenClawPluginApi): void {
   // Register a tool factory. OpenClaw calls this for each agent session,
   // passing the agent's context (agentId, workspaceDir, etc.).
   // The factory returns tools bound to that agent's bridge.
-  api.registerTool(async (ctx) => {
+  api.registerTool((ctx) => {
     const workspaceDir = ctx.workspaceDir ?? "/workspace";
 
     if (!cachedToolDefs) {
-      await ensureToolDefs();
-    }
-
-    if (!cachedToolDefs) {
-      api.logger.warn("[context-mode] tool definitions unavailable — skipping");
+      api.logger.warn("[context-mode] tool definitions not yet available — skipping");
       return null;
     }
 
