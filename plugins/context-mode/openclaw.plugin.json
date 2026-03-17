@@ -39,6 +39,16 @@
         "type": "number",
         "default": 30000,
         "description": "Timeout for MCP calls"
+      },
+      "sandboxExec": {
+        "type": "boolean",
+        "default": false,
+        "description": "Spawn context-mode inside the agent's sandbox container via docker exec instead of locally on the gateway"
+      },
+      "sandboxRegistryPath": {
+        "type": "string",
+        "default": "/home/openclaw/.openclaw/sandbox/containers.json",
+        "description": "Path to the sandbox container registry JSON (override for testing)"
       }
     }
   }

@@ -8,6 +8,8 @@ const DEFAULT_COMMAND = "context-mode";
 const DEFAULT_TOOL_PREFIX = "cm";
 const DEFAULT_TIMEOUT_MS = 30_000;
 const DEFAULT_SKIP_TOOLS: string[] = [];
+const DEFAULT_SANDBOX_REGISTRY_PATH =
+  "/home/openclaw/.openclaw/sandbox/containers.json";
 
 export type RawContextModeConfig = {
   command?: unknown;
@@ -16,6 +18,8 @@ export type RawContextModeConfig = {
   toolPrefix?: unknown;
   skipTools?: unknown;
   timeoutMs?: unknown;
+  sandboxExec?: unknown;
+  sandboxRegistryPath?: unknown;
 };
 
 export type NormalizedContextModeConfig = {
@@ -25,6 +29,8 @@ export type NormalizedContextModeConfig = {
   toolPrefix: string;
   skipTools: string[];
   timeoutMs: number;
+  sandboxExec: boolean;
+  sandboxRegistryPath: string;
 };
 
 export function normalizeContextModeConfig(
@@ -57,6 +63,11 @@ export function normalizeContextModeConfig(
       ? [...new Set(raw.skipTools.filter((name): name is string => typeof name === "string"))]
       : [...DEFAULT_SKIP_TOOLS],
     timeoutMs: coercePositiveInt(raw.timeoutMs, DEFAULT_TIMEOUT_MS),
+    sandboxExec: raw.sandboxExec === true,
+    sandboxRegistryPath:
+      typeof raw.sandboxRegistryPath === "string" && raw.sandboxRegistryPath.trim()
+        ? raw.sandboxRegistryPath.trim()
+        : DEFAULT_SANDBOX_REGISTRY_PATH,
   };
 }
 
