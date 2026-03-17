@@ -280,6 +280,16 @@ The base compose leaves most of `/home/openclaw` as ephemeral tmpfs — it reset
 
 These are all optional — only add what your use case actually needs.
 
+**Workspace-local XDG paths (recommended):** for sandboxed agent commands, set XDG paths to the workspace root so tool state lands in one stable place instead of leaking into repo workdirs when a runtime overrides `HOME` to the current workdir.
+
+Recommended values:
+
+- `XDG_DATA_HOME=/workspaces/arlo/.local/share`
+- `XDG_CONFIG_HOME=/workspaces/arlo/.local/config`
+- `XDG_STATE_HOME=/workspaces/arlo/.local/state`
+
+This keeps RTK history at `/workspaces/arlo/.local/share/rtk/history.db` and avoids stray `.local/` directories under repos and worktrees.
+
 ### Named Network
 
 By default, Carapace uses Docker's default bridge network. If you want the gateway reachable by other containers (e.g., a reverse proxy or companion services), define a named network via an override:
