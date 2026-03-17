@@ -1,3 +1,4 @@
+import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import type {
   AnyAgentTool,
@@ -60,6 +61,28 @@ function readSandboxRegistry(
   }
 }
 
+function isSandboxContainerRunning(
+  containerName: string,
+  logger: RuntimeLogger,
+): boolean {
+  try {
+    const output = execSync(
+      `docker inspect --format='{{.State.Running}}' ${containerName}`,
+      {
+        stdio: ["ignore", "pipe", "ignore"],
+        encoding: "utf-8",
+      },
+    );
+
+    return output.trim() === "true";
+  } catch (error) {
+    logger.warn(
+      `[context-mode] failed to inspect sandbox container "${containerName}": ${formatError(error)}`,
+    );
+    return false;
+  }
+}
+
 function resolveSandboxContainerName(
   registryPath: string,
   agentId: string,
@@ -69,15 +92,34 @@ function resolveSandboxContainerName(
   const entry = readSandboxRegistry(registryPath, logger).find(
     (item) => item.sessionKey === sessionKey,
   );
-  return entry?.containerName ?? null;
+
+  if (!entry) {
+    return null;
+  }
+
+  if (!isSandboxContainerRunning(entry.containerName, logger)) {
+    logger.warn(
+      `[context-mode] sandbox container "${entry.containerName}" for agent "${agentId}" is not running`,
+    );
+    return null;
+  }
+
+  return entry.containerName;
 }
 
 function resolveAnySandboxContainerName(
   registryPath: string,
   logger: RuntimeLogger,
 ): string | null {
-  const entry = readSandboxRegistry(registryPath, logger)[0];
-  return entry?.containerName ?? null;
+  const entries = readSandboxRegistry(registryPath, logger);
+
+  for (const entry of entries) {
+    if (isSandboxContainerRunning(entry.containerName, logger)) {
+      return entry.containerName;
+    }
+  }
+
+  return null;
 }
 
 export default function register(api: OpenClawPluginApi): void {
@@ -221,16 +263,15 @@ export default function register(api: OpenClawPluginApi): void {
   // Register a tool factory. OpenClaw calls this for each agent session,
   // passing the agent's context (agentId, workspaceDir, etc.).
   // The factory returns tools bound to that agent's bridge.
-  api.registerTool((ctx) => {
+  api.registerTool(async (ctx) => {
     const workspaceDir = ctx.workspaceDir ?? "/workspace";
 
     if (!cachedToolDefs) {
-      void ensureToolDefs().catch((error) => {
-        api.logger.warn(
-          `[context-mode] failed to refresh tool definitions: ${formatError(error)}`,
-        );
-      });
-      api.logger.warn("[context-mode] tool definitions not yet loaded — skipping");
+      await ensureToolDefs();
+    }
+
+    if (!cachedToolDefs) {
+      api.logger.warn("[context-mode] tool definitions unavailable — skipping");
       return null;
     }
 
