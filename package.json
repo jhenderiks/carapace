@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.27.1",
-    "context-mode": "1.0.22",
+    "context-mode": "1.0.24",
     "openclaw": "2026.3.2",
     "typescript": "5.9.3"
   },
