@@ -162,7 +162,6 @@ export default function register(api: OpenClawPluginApi): void {
   function buildSandboxServerConfig(
     baseServerConfig: NormalizedServerConfig,
     containerName: string,
-    workspaceDir: string,
   ): NormalizedServerConfig {
     return {
       ...baseServerConfig,
@@ -170,8 +169,6 @@ export default function register(api: OpenClawPluginApi): void {
       args: [
         "exec",
         "-i",
-        "-e",
-        `CLAUDE_PROJECT_DIR=${workspaceDir}`,
         containerName,
         "node",
         SANDBOX_CM_SERVER_PATH,
@@ -204,13 +201,9 @@ export default function register(api: OpenClawPluginApi): void {
           return null;
         }
 
-        const sandboxWorkspaceDir =
-          resolveSandboxContainerWorkdir(containerName, api.logger) ?? "/workspace";
-
         tempConfig = buildSandboxServerConfig(
           baseServerConfig,
           containerName,
-          sandboxWorkspaceDir,
         );
       }
 
@@ -247,6 +240,7 @@ export default function register(api: OpenClawPluginApi): void {
       return existingBridge;
     }
 
+<<<<<<< HEAD
     const baseServerConfig = toServerConfig(config);
     let serverConfig: NormalizedServerConfig;
 
@@ -275,20 +269,13 @@ export default function register(api: OpenClawPluginApi): void {
       serverConfig = buildSandboxServerConfig(
         baseServerConfig,
         containerName,
-        sandboxWorkspaceDir,
       );
 
       api.logger.info(
         `[context-mode] sandbox exec: ${agentId} → ${containerName} (${sandboxWorkspaceDir})`,
       );
     } else {
-      serverConfig = {
-        ...baseServerConfig,
-        env: {
-          ...baseServerConfig.env,
-          CLAUDE_PROJECT_DIR: workspaceDir,
-        },
-      };
+      serverConfig = baseServerConfig;
     }
 
     const bridge = new McpServerBridge(
