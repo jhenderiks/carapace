@@ -240,7 +240,6 @@ export default function register(api: OpenClawPluginApi): void {
       return existingBridge;
     }
 
-<<<<<<< HEAD
     const baseServerConfig = toServerConfig(config);
     let serverConfig: NormalizedServerConfig;
 
