@@ -1,4 +1,10 @@
-import type { AnyAgentTool, OpenClawPluginApi } from "openclaw/plugin-sdk";
+import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+import type {
+  AnyAgentTool,
+  OpenClawPluginApi,
+  RuntimeLogger,
+} from "openclaw/plugin-sdk";
 import {
   asRecord,
   executeWithRetry,
@@ -6,10 +12,19 @@ import {
   McpServerBridge,
   normalizeJsonSchema,
   normalizeMcpResult,
+  type NormalizedServerConfig,
 } from "../../mcp-bridge/index.js";
 import { normalizeContextModeConfig, toServerConfig } from "./types.js";
 
 type CachedToolDefs = Awaited<ReturnType<McpServerBridge["listTools"]>>;
+
+type SandboxRegistryEntry = {
+  containerName: string;
+  sessionKey: string;
+};
+
+const SANDBOX_CM_SERVER_PATH =
+  "/opt/openclaw/node_modules/context-mode/server.bundle.mjs";
 
 // Module-level bridge cache: one MCP process per agent workspace.
 // Keyed by workspaceDir to handle registry reloads (different cache keys
@@ -19,14 +34,119 @@ const bridgeCache = new Map<string, McpServerBridge>();
 // Cache tool definitions from the first listTools() call — MCP tool
 // metadata doesn't change between agents.
 let cachedToolDefs: CachedToolDefs | null = null;
-let toolDefsPromise: Promise<CachedToolDefs> | null = null;
+let toolDefsPromise: Promise<CachedToolDefs | null> | null = null;
+
+function readSandboxRegistry(
+  registryPath: string,
+  logger: RuntimeLogger,
+): SandboxRegistryEntry[] {
+  try {
+    const raw = JSON.parse(readFileSync(registryPath, "utf-8")) as {
+      entries?: unknown;
+    };
+    const entries = Array.isArray(raw?.entries) ? raw.entries : [];
+
+    return entries.filter(
+      (entry): entry is SandboxRegistryEntry =>
+        Boolean(entry) &&
+        typeof entry === "object" &&
+        typeof (entry as SandboxRegistryEntry).sessionKey === "string" &&
+        typeof (entry as SandboxRegistryEntry).containerName === "string",
+    );
+  } catch (error) {
+    logger.warn(
+      `[context-mode] failed to read sandbox registry: ${formatError(error)}`,
+    );
+    return [];
+  }
+}
+
+function isSandboxContainerRunning(
+  containerName: string,
+  logger: RuntimeLogger,
+): boolean {
+  try {
+    const output = execFileSync(
+      "docker",
+      ["inspect", "--format={{.State.Running}}", containerName],
+      {
+        stdio: ["ignore", "pipe", "ignore"],
+        encoding: "utf-8",
+      },
+    );
+
+    return output.trim() === "true";
+  } catch (error) {
+    logger.warn(
+      `[context-mode] failed to inspect sandbox container "${containerName}": ${formatError(error)}`,
+    );
+    return false;
+  }
+}
+
+function resolveSandboxContainerName(
+  registryPath: string,
+  agentId: string,
+  logger: RuntimeLogger,
+): string | null {
+  const sessionKey = `agent:${agentId}`;
+  const entry = readSandboxRegistry(registryPath, logger).find(
+    (item) => item.sessionKey === sessionKey,
+  );
+
+  if (!entry) {
+    return null;
+  }
+
+  if (!isSandboxContainerRunning(entry.containerName, logger)) {
+    logger.warn(
+      `[context-mode] sandbox container "${entry.containerName}" for agent "${agentId}" is not running`,
+    );
+    return null;
+  }
+
+  return entry.containerName;
+}
+
+function resolveAnySandboxContainerName(
+  registryPath: string,
+  logger: RuntimeLogger,
+): string | null {
+  const entries = readSandboxRegistry(registryPath, logger);
+
+  for (const entry of entries) {
+    if (isSandboxContainerRunning(entry.containerName, logger)) {
+      return entry.containerName;
+    }
+  }
+
+  return null;
+}
 
 export default function register(api: OpenClawPluginApi): void {
   const config = normalizeContextModeConfig(api.pluginConfig);
   const skipTools = new Set(config.skipTools);
 
+  function buildSandboxServerConfig(
+    baseServerConfig: NormalizedServerConfig,
+    containerName: string,
+  ): NormalizedServerConfig {
+    return {
+      ...baseServerConfig,
+      command: "docker",
+      args: [
+        "exec",
+        "-i",
+        containerName,
+        "node",
+        SANDBOX_CM_SERVER_PATH,
+      ],
+      env: {},
+    };
+  }
+
   // Fetch tool definitions once (any bridge will do — tools are the same).
-  async function ensureToolDefs(): Promise<CachedToolDefs> {
+  async function ensureToolDefs(): Promise<CachedToolDefs | null> {
     if (cachedToolDefs) {
       return cachedToolDefs;
     }
@@ -36,20 +156,40 @@ export default function register(api: OpenClawPluginApi): void {
     }
 
     toolDefsPromise = (async () => {
-      const tempConfig = toServerConfig(config);
-      const tempBridge = new McpServerBridge(tempConfig.id, tempConfig, api.logger);
-      const tools = await tempBridge.listTools();
-      cachedToolDefs = tools;
+      const baseServerConfig = toServerConfig(config);
+      let tempConfig = baseServerConfig;
 
-      // Disconnect the bootstrap bridge — it was only needed for listTools().
-      // Per-agent bridges are created on demand in getOrCreateBridge().
-      try {
-        await tempBridge.disconnect();
-      } catch {
-        // best-effort cleanup
+      if (config.sandboxExec) {
+        const containerName = resolveAnySandboxContainerName(
+          config.sandboxRegistryPath,
+          api.logger,
+        );
+
+        if (!containerName) {
+          return null;
+        }
+
+        tempConfig = buildSandboxServerConfig(
+          baseServerConfig,
+          containerName,
+        );
       }
 
-      return tools;
+      const tempBridge = new McpServerBridge(tempConfig.id, tempConfig, api.logger);
+
+      try {
+        const tools = await tempBridge.listTools();
+        cachedToolDefs = tools;
+        return tools;
+      } finally {
+        // Disconnect the bootstrap bridge — it was only needed for listTools().
+        // Per-agent bridges are created on demand in getOrCreateBridge().
+        try {
+          await tempBridge.disconnect();
+        } catch {
+          // best-effort cleanup
+        }
+      }
     })();
 
     try {
@@ -59,20 +199,48 @@ export default function register(api: OpenClawPluginApi): void {
     }
   }
 
-  function getOrCreateBridge(workspaceDir: string): McpServerBridge {
+  function getOrCreateBridge(
+    workspaceDir: string,
+    agentId: string | undefined,
+  ): McpServerBridge {
     const existingBridge = bridgeCache.get(workspaceDir);
     if (existingBridge) {
       return existingBridge;
     }
 
     const baseServerConfig = toServerConfig(config);
-    const serverConfig = {
-      ...baseServerConfig,
-      env: {
-        ...baseServerConfig.env,
-        CLAUDE_PROJECT_DIR: workspaceDir,
-      },
-    };
+    let serverConfig: NormalizedServerConfig;
+
+    if (config.sandboxExec) {
+      if (!agentId) {
+        throw new Error(
+          "[context-mode] sandboxExec is enabled but no agentId available",
+        );
+      }
+
+      const containerName = resolveSandboxContainerName(
+        config.sandboxRegistryPath,
+        agentId,
+        api.logger,
+      );
+
+      if (!containerName) {
+        throw new Error(
+          `[context-mode] sandboxExec is enabled but no sandbox container found for agent \"${agentId}\"`,
+        );
+      }
+
+      serverConfig = buildSandboxServerConfig(
+        baseServerConfig,
+        containerName,
+      );
+
+      api.logger.info(
+        `[context-mode] sandbox exec: ${agentId} → ${containerName}`,
+      );
+    } else {
+      serverConfig = baseServerConfig;
+    }
 
     const bridge = new McpServerBridge(
       `${serverConfig.id}-${workspaceDir}`,
@@ -89,20 +257,21 @@ export default function register(api: OpenClawPluginApi): void {
   // The factory returns tools bound to that agent's bridge.
   api.registerTool((ctx) => {
     const workspaceDir = ctx.workspaceDir ?? "/workspace";
-    const bridge = getOrCreateBridge(workspaceDir);
-    const prefix = config.toolPrefix;
 
-    // Tool definitions must be returned synchronously from the factory.
-    // We can't await ensureToolDefs() here. Two approaches:
-    //
-    // A) Pre-populate cachedToolDefs in gateway_start (before any session).
-    // B) Return a fixed set of known tool names.
-    //
-    // We use approach A: gateway_start populates the cache, factory reads it.
     if (!cachedToolDefs) {
-      api.logger.warn("[context-mode] tool definitions not yet loaded — skipping");
+      void ensureToolDefs().catch((error) => {
+        api.logger.warn(
+          `[context-mode] background tool definition retry failed: ${formatError(error)}`,
+        );
+      });
+      api.logger.warn("[context-mode] tool definitions not yet available — skipping");
       return null;
     }
+
+    // Ensure bridge can be created for this session (and warm cache).
+    getOrCreateBridge(workspaceDir, ctx.agentId);
+
+    const prefix = config.toolPrefix;
 
     const tools: AnyAgentTool[] = [];
 
@@ -119,14 +288,28 @@ export default function register(api: OpenClawPluginApi): void {
         description: mcpTool.description ?? `context-mode: ${mcpTool.name}`,
         parameters: normalizeJsonSchema(mcpTool.inputSchema),
         async execute(_toolCallId, params) {
-          const result = await executeWithRetry(
-            { config: toServerConfig(config), bridge },
-            mcpTool.name,
-            asRecord(params),
-            api.logger,
-          );
+          const bridge =
+            bridgeCache.get(workspaceDir) ??
+            getOrCreateBridge(workspaceDir, ctx.agentId);
 
-          return normalizeMcpResult(result, toolName, "context-mode", "context-mode");
+          try {
+            const result = await executeWithRetry(
+              { config: toServerConfig(config), bridge },
+              mcpTool.name,
+              asRecord(params),
+              api.logger,
+            );
+
+            return normalizeMcpResult(result, toolName, "context-mode", "context-mode");
+          } catch (error) {
+            bridgeCache.delete(workspaceDir);
+            try {
+              await bridge.disconnect();
+            } catch {
+              // best-effort cleanup
+            }
+            throw error;
+          }
         },
       });
     }
@@ -141,10 +324,16 @@ export default function register(api: OpenClawPluginApi): void {
   // Pre-load tool definitions so the factory has them synchronously.
   api.on("gateway_start", async () => {
     try {
-      await ensureToolDefs();
-      api.logger.info(
-        `[context-mode] ready (${cachedToolDefs!.length} tool defs cached)`,
-      );
+      const toolDefs = await ensureToolDefs();
+
+      if (!toolDefs) {
+        api.logger.info(
+          "[context-mode] sandbox exec enabled but no sandbox container available for bootstrap",
+        );
+        return;
+      }
+
+      api.logger.info(`[context-mode] ready (${toolDefs.length} tool defs cached)`);
     } catch (error) {
       api.logger.error(
         `[context-mode] failed to load tool definitions: ${formatError(error)}`,
