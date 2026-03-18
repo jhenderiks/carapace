@@ -111,4 +111,4 @@ RUN bun i --frozen-lockfile --backend=copyfile \
   && find ${APP}/node_modules/openclaw/extensions -type d -exec chmod 755 {} + \
   && find ${APP}/node_modules/openclaw/extensions -type f -exec chmod 644 {} +
 
-ENTRYPOINT ["bun", "openclaw"]
+ENTRYPOINT ["openclaw"]

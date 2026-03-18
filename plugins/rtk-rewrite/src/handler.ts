@@ -1,5 +1,52 @@
 import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
-import { applyRtkRouting, normalizeRtkConfig } from "./routing.js";
+import {
+  applyRtkRouting,
+  normalizeRtkConfig,
+  type RewriteOptions,
+} from "./routing.js";
+import type { RtkConfig } from "./types.js";
+
+type ToolParams = Record<string, unknown>;
+
+function asRecord(value: unknown): ToolParams | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+
+  return value as ToolParams;
+}
+
+export function maybeRewriteToolParams(
+  toolName: string,
+  params: unknown,
+  config: RtkConfig,
+  options?: RewriteOptions,
+): ToolParams | null {
+  if (toolName !== "exec") {
+    return null;
+  }
+
+  const record = asRecord(params);
+
+  if (!record) {
+    return null;
+  }
+
+  const command = record.command;
+
+  if (typeof command !== "string") {
+    return null;
+  }
+
+  const rewritten = applyRtkRouting(command, config, options);
+
+  return rewritten === null
+    ? null
+    : {
+        ...record,
+        command: rewritten,
+      };
+}
 
 export default function register(api: OpenClawPluginApi): void {
   const config = normalizeRtkConfig(api.pluginConfig);
@@ -11,17 +58,7 @@ export default function register(api: OpenClawPluginApi): void {
   let warnedBinaryFailure = false;
 
   api.on("before_tool_call", (event) => {
-    if (event.toolName !== "exec") {
-      return;
-    }
-
-    const command = event.params?.command;
-
-    if (typeof command !== "string") {
-      return;
-    }
-
-    const rewritten = applyRtkRouting(command, config, {
+    const params = maybeRewriteToolParams(event.toolName, event.params, config, {
       onError: (error) => {
         if (!warnedBinaryFailure) {
           warnedBinaryFailure = true;
@@ -32,15 +69,6 @@ export default function register(api: OpenClawPluginApi): void {
       },
     });
 
-    if (rewritten === null) {
-      return;
-    }
-
-    return {
-      params: {
-        ...event.params,
-        command: rewritten,
-      },
-    };
+    return params ? { params } : undefined;
   });
 }

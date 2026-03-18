@@ -32,8 +32,8 @@
       "skipTools": {
         "type": "array",
         "items": { "type": "string" },
-        "default": ["execute", "execute_file", "fetch_and_index"],
-        "description": "MCP tool names to skip (redundant with OpenClaw builtins)"
+        "default": ["ctx_execute", "ctx_batch_execute"],
+        "description": "MCP tool names to skip. In carapace, shell execution is routed through exec+rtk, so context-mode execute tools are disabled by default."
       },
       "timeoutMs": {
         "type": "number",

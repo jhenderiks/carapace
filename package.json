@@ -13,11 +13,11 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.27.1",
     "context-mode": "1.0.24",
-    "openclaw": "2026.3.2",
+    "node-llama-cpp": "3.16.2",
+    "openclaw": "2026.3.13",
     "typescript": "5.9.3"
   },
   "patchedDependencies": {
-    "openclaw@2026.3.2": "patches/openclaw@2026.3.2.patch",
-    "@mariozechner/pi-ai@0.55.3": "patches/@mariozechner+pi-ai@0.55.3.patch"
+    "openclaw@2026.3.13": "patches/openclaw@2026.3.13.patch"
   }
 }

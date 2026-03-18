@@ -1,23 +1,44 @@
 # dependencies
-node_modules
+node_modules/
 
-# env
+# separate build contexts
+browser/
+
+# env & config
 .env
 .env.example
 .envrc
 
-# local configs
-.cursor
+# runtime directories (volume-mounted)
+config/
+workspace/
+.local/
 
-# git
-.git
-.githooks
+# git & ci
+.git/
+.github/
+.githooks/
 .gitignore
 
 # nix
-.direnv
+.direnv/
 flake.nix
 flake.lock
+
+# editor
+.cursor/
+
+# docs
+/README.md
+/LICENSE
+
+# docker meta (read separately by docker, not needed in build context)
+docker-compose*.yml
+Dockerfile*
+.dockerignore
+
+# typescript config (bun handles ts natively at runtime)
+tsconfig.json
 
 # os
 .DS_Store

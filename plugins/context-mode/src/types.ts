@@ -7,7 +7,7 @@ import {
 const DEFAULT_COMMAND = "context-mode";
 const DEFAULT_TOOL_PREFIX = "cm";
 const DEFAULT_TIMEOUT_MS = 30_000;
-const DEFAULT_SKIP_TOOLS: string[] = [];
+const DEFAULT_SKIP_TOOLS = ["ctx_execute", "ctx_batch_execute"] as const;
 const DEFAULT_SANDBOX_REGISTRY_PATH =
   "/home/openclaw/.openclaw/sandbox/containers.json";
 
