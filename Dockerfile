@@ -108,7 +108,7 @@ COPY --chown=node: plugins plugins
 
 RUN bun i --frozen-lockfile --backend=copyfile \
   # OpenClaw blocks world-writable plugin files; normalize modes after install
-  && find ${APP}/node_modules/openclaw/extensions -type d -exec chmod 755 {} + \
-  && find ${APP}/node_modules/openclaw/extensions -type f -exec chmod 644 {} +
+  && find ${APP}/node_modules/openclaw/dist/extensions -type d -exec chmod 755 {} + \
+  && find ${APP}/node_modules/openclaw/dist/extensions -type f -exec chmod 644 {} +
 
 ENTRYPOINT ["openclaw"]
