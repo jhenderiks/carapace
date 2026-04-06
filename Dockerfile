@@ -107,20 +107,28 @@ COPY --chown=node: patches patches
 COPY --chown=node: plugins plugins
 
 RUN bun i --frozen-lockfile --backend=copyfile \
-  # OpenClaw blocks world-writable plugin files; normalize modes after install
-  && chmod -R u=rwX,go=rX ${APP}/node_modules/openclaw/dist/extensions \
-  # telegram extension packages are nested but imported from dist root (openclaw 2026.4.2)
-  # symlink non-scoped packages (skip @-prefixed scoped dirs)
-  && for pkg in ${APP}/node_modules/openclaw/dist/extensions/telegram/node_modules/*; do \
-       name=$(basename "$pkg"); \
-       case "$name" in @*) continue ;; esac; \
-        [ ! -e "${APP}/node_modules/$name" ] && ln -s "$pkg" "${APP}/node_modules/$name" || true; \
+  && node ${APP}/node_modules/openclaw/scripts/postinstall-bundled-plugins.mjs \
+  && for nm in ${APP}/node_modules/openclaw/dist/extensions/*/node_modules; do \
+       [ -d "$nm" ] || continue; \
+       for pkg in "$nm"/*; do \
+         name=$(basename "$pkg"); \
+         case "$name" in \
+           @*) \
+             mkdir -p "${APP}/node_modules/$name"; \
+             for scoped in "$pkg"/*; do \
+               [ -e "$scoped" ] || continue; \
+               scoped_name=$(basename "$scoped"); \
+               [ ! -e "${APP}/node_modules/$name/$scoped_name" ] && ln -s "$scoped" "${APP}/node_modules/$name/$scoped_name" || true; \
+             done \
+             ;; \
+           .*) \
+             ;; \
+           *) \
+             [ ! -e "${APP}/node_modules/$name" ] && ln -s "$pkg" "${APP}/node_modules/$name" || true \
+             ;; \
+         esac; \
+       done; \
      done \
-  # symlink scoped @grammyjs packages individually (real dir + per-package symlinks)
-  && mkdir -p ${APP}/node_modules/@grammyjs \
-  && for pkg in ${APP}/node_modules/openclaw/dist/extensions/telegram/node_modules/@grammyjs/*; do \
-       name=$(basename "$pkg"); \
-       [ ! -e "${APP}/node_modules/@grammyjs/$name" ] && ln -s "$pkg" "${APP}/node_modules/@grammyjs/$name" || true; \
-     done
+  && chmod -R u=rwX,go=rX ${APP}/node_modules/openclaw/dist/extensions
 
 ENTRYPOINT ["openclaw"]
