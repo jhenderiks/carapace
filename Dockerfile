@@ -108,7 +108,19 @@ COPY --chown=node: plugins plugins
 
 RUN bun i --frozen-lockfile --backend=copyfile \
   # OpenClaw blocks world-writable plugin files; normalize modes after install
-  && find ${APP}/node_modules/openclaw/dist/extensions -type d -exec chmod 755 {} + \
-  && find ${APP}/node_modules/openclaw/dist/extensions -type f -exec chmod 644 {} +
+  && chmod -R u=rwX,go=rX ${APP}/node_modules/openclaw/dist/extensions \
+  # telegram extension packages are nested but imported from dist root (openclaw 2026.4.2)
+  # symlink non-scoped packages (skip @-prefixed scoped dirs)
+  && for pkg in ${APP}/node_modules/openclaw/dist/extensions/telegram/node_modules/*; do \
+       name=$(basename "$pkg"); \
+       case "$name" in @*) continue ;; esac; \
+        [ ! -e "${APP}/node_modules/$name" ] && ln -s "$pkg" "${APP}/node_modules/$name" || true; \
+     done \
+  # symlink scoped @grammyjs packages individually (real dir + per-package symlinks)
+  && mkdir -p ${APP}/node_modules/@grammyjs \
+  && for pkg in ${APP}/node_modules/openclaw/dist/extensions/telegram/node_modules/@grammyjs/*; do \
+       name=$(basename "$pkg"); \
+       [ ! -e "${APP}/node_modules/@grammyjs/$name" ] && ln -s "$pkg" "${APP}/node_modules/@grammyjs/$name" || true; \
+     done
 
 ENTRYPOINT ["openclaw"]
