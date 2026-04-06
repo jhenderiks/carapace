@@ -1,5 +1,16 @@
 # dependencies
-node_modules/
+**/node_modules/
+
+# local plugin build/test artifacts
+plugins/*/dist/
+plugins/*/coverage/
+plugins/*/.turbo/
+plugins/*/.cache/
+plugins/*/*.tsbuildinfo
+
+# plugin docs/tests are not needed in the runtime image
+plugins/*/README.md
+plugins/**/*.test.ts
 
 # separate build contexts
 browser/
