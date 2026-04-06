@@ -1,0 +1,111 @@
+--- a/dist/extensions/mattermost/api.js
++++ b/dist/extensions/mattermost/api.js
+@@ -756,45 +756,51 @@
+ 	return {
+ 		payload,
+ 		post
+ 	};
+ }
+ function createMattermostConnectOnce(opts) {
+ 	const webSocketFactory = opts.webSocketFactory ?? defaultMattermostWebSocketFactory;
+ 	const healthCheckIntervalMs = opts.healthCheckIntervalMs ?? 3e4;
+ 	return async () => {
+ 		const ws = webSocketFactory(opts.wsUrl);
+ 		const onAbort = () => ws.terminate();
+ 		opts.abortSignal?.addEventListener("abort", onAbort, { once: true });
+ 		const getBotUpdateAt = opts.getBotUpdateAt;
+ 		try {
+ 			return await new Promise((resolve, reject) => {
+ 				let opened = false;
+ 				let settled = false;
+ 				let healthCheckEnabled = getBotUpdateAt != null;
+ 				let healthCheckInFlight = false;
+ 				let healthCheckTimer;
++				let pingTimer;
++				let lastPongAt = Date.now();
+ 				let initialUpdateAt;
+ 				const clearTimers = () => {
+ 					if (healthCheckTimer !== void 0) {
+ 						clearTimeout(healthCheckTimer);
+ 						healthCheckTimer = void 0;
++					}
++					if (pingTimer !== void 0) {
++						clearInterval(pingTimer);
++						pingTimer = void 0;
+ 					}
+ 				};
+ 				const stopHealthChecks = () => {
+ 					healthCheckEnabled = false;
+ 					clearTimers();
+ 				};
+ 				const scheduleHealthCheck = () => {
+ 					if (!getBotUpdateAt || !healthCheckEnabled || settled || healthCheckInFlight) return;
+ 					healthCheckTimer = setTimeout(() => {
+ 						healthCheckTimer = void 0;
+ 						runHealthCheck();
+ 					}, healthCheckIntervalMs);
+ 				};
+ 				const runHealthCheck = async () => {
+ 					if (!getBotUpdateAt || !healthCheckEnabled || settled || healthCheckInFlight) return;
+ 					healthCheckInFlight = true;
+ 					try {
+ 						const current = await getBotUpdateAt();
+ 						if (!healthCheckEnabled || settled) return;
+ 						if (initialUpdateAt === void 0) {
+@@ -812,39 +818,56 @@
+ 						opts.runtime.error?.(`${label}: ${String(err)}`);
+ 					} finally {
+ 						healthCheckInFlight = false;
+ 						scheduleHealthCheck();
+ 					}
+ 				};
+ 				const resolveOnce = () => {
+ 					if (settled) return;
+ 					settled = true;
+ 					stopHealthChecks();
+ 					resolve();
+ 				};
+ 				const rejectOnce = (error) => {
+ 					if (settled) return;
+ 					settled = true;
+ 					stopHealthChecks();
+ 					reject(error);
+ 				};
+ 				ws.on("open", () => {
+ 					opened = true;
++					lastPongAt = Date.now();
++					ws.on("pong", () => {
++						lastPongAt = Date.now();
++					});
++					if (typeof ws.ping === "function") {
++						pingTimer = setInterval(() => {
++							if (Date.now() - lastPongAt > 6e4) {
++								opts.runtime.error?.("mattermost websocket pong timeout — terminating");
++								ws.terminate();
++								return;
++							}
++							try {
++								ws.ping();
++							} catch {
++							}
++						}, 3e4);
++					}
+ 					opts.statusSink?.({
+ 						connected: true,
+ 						lastConnectedAt: Date.now(),
+ 						lastError: null
+ 					});
+ 					ws.send(JSON.stringify({
+ 						seq: opts.nextSeq(),
+ 						action: "authentication_challenge",
+ 						data: { token: opts.botToken }
+ 					}));
+ 					if (getBotUpdateAt) runHealthCheck();
+ 				});
+ 				ws.on("message", async (data) => {
+ 					const payload = parseMattermostEventPayload(rawDataToString(data));
+ 					if (!payload) return;
+ 					if (payload.event === "reaction_added" || payload.event === "reaction_removed") {
+ 						if (!opts.onReaction) return;
+ 						try {
+ 							await opts.onReaction(payload);
