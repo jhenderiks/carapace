@@ -1,32 +1,15 @@
-FROM rust:bookworm AS build
+FROM rust:bookworm AS builder
 
-ARG RTK_VERSION=v0.27.2
+ARG RTK_VERSION=v0.35.0
 
-RUN \
-  DEBIAN_FRONTEND=noninteractive apt-get update \
-  && apt-get install -y --no-install-recommends \
-    musl-tools \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/usr/local/cargo/git \
+    cargo install --git https://github.com/rtk-ai/rtk --tag ${RTK_VERSION}
 
-RUN \
-  case "$(dpkg --print-architecture)" in \
-    amd64) RTK_TARGET="x86_64-unknown-linux-musl" ;; \
-    arm64) RTK_TARGET="aarch64-unknown-linux-musl" ;; \
-    *) echo "Unsupported architecture: $(dpkg --print-architecture)" >&2; exit 1 ;; \
-  esac \
-  && rustup target add ${RTK_TARGET} \
-  && cargo install \
-    --git https://github.com/rtk-ai/rtk \
-    --tag ${RTK_VERSION} \
-    --target ${RTK_TARGET} \
-    --root /opt/rtk-install
+FROM debian:bookworm-slim AS rtk
 
-FROM alpine:3.21
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
-COPY --from=build /opt/rtk-install/bin/rtk /usr/local/bin/rtk
-COPY rtk /opt/rtk
-
-RUN chmod 755 /opt/rtk/*
-
-ENTRYPOINT ["rtk"]
+COPY --from=builder /usr/local/cargo/bin/rtk /usr/local/bin/rtk

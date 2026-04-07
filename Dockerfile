@@ -1,17 +1,3 @@
-ARG RTK_VERSION=v0.27.2
-ARG RTK_IMAGE=rtk-local
-
-FROM rust:bookworm AS rtk-local-build
-ARG RTK_VERSION
-RUN cargo install --git https://github.com/rtk-ai/rtk --tag ${RTK_VERSION}
-
-# minimal stage to hold rtk artifacts for local fallback (when no RTK_IMAGE is set)
-FROM scratch AS rtk-local
-COPY --from=rtk-local-build /usr/local/cargo/bin/rtk /usr/local/bin/rtk
-COPY rtk /opt/rtk
-
-FROM ${RTK_IMAGE} AS rtk
-
 FROM node:24-bookworm-slim
 
 EXPOSE 18789
@@ -19,33 +5,14 @@ EXPOSE 18789
 RUN \
   DEBIAN_FRONTEND=noninteractive apt-get update \
   && apt-get install -y --no-install-recommends \
+    bash \
     ca-certificates \
     curl \
-  && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
-    -o /usr/share/keyrings/githubcli-archive-keyring.gpg \
-  && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
-    > /etc/apt/sources.list.d/github-cli.list \
-  && apt-get install -y --no-install-recommends \
-    bash \
-    bat \
-    coreutils \
-    fd-find \
-    ffmpeg \
-    fzf \
-    g++ \
-    gh \
     git \
-    imagemagick \
     jq \
-    make \
     openssh-client \
     python-is-python3 \
-    python3 \
-    python3-pip \
-    ripgrep \
-    trash-cli \
-    unzip \
-    wget
+    python3
 
 # investigation / network-debug tools (only enable when needed)
 # RUN \
@@ -62,25 +29,14 @@ ARG APP=/opt/openclaw
 ARG HOME=/home/openclaw
 
 RUN \
-  ARCH="$(dpkg --print-architecture | sed 's/arm64/aarch64/' | sed 's/amd64/x86_64/')" \
   # apt housekeeping
-  && apt-get clean && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* \
-  # install yt-dlp (youtube transcript/media extraction)
-  && pip install --break-system-packages yt-dlp \
+  apt-get clean && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* \
   # install bun
   && npm i -g bun npm \
-  # symlink fdfind to fd
-  && ln -sf /usr/bin/fdfind /usr/local/bin/fd \
-  # install eza
-  && wget -qO /tmp/eza.tar.gz "https://github.com/eza-community/eza/releases/latest/download/eza_${ARCH}-unknown-linux-gnu.tar.gz" \
-  && tar -xzf /tmp/eza.tar.gz -C /usr/local/bin/ \
-  && rm /tmp/eza.tar.gz \
   # fix sqlite-vec linking issue
   && SQLITE_ARCH="$(dpkg --print-architecture | sed 's/amd64/x64/')" \
   && mkdir -p /usr/local/lib/sqlite-vec \
   && ln -s ${APP}/node_modules/sqlite-vec-linux-${SQLITE_ARCH}/vec0.so /usr/local/lib/sqlite-vec/vec0.so \
-  # symlink bat (bookworm packages as batcat)
-  && ln -s /usr/bin/batcat /usr/local/bin/bat \
   # set home directory
   && usermod -d ${HOME} node \
   # create directories
@@ -96,9 +52,7 @@ ENV PATH=${APP}/node_modules/.bin:/usr/lib/cargo/bin:$PATH
 ENV OPENCLAW_STATE_DIR=${HOME}/.openclaw
 ENV OPENCLAW_WORKSPACE_DIR=${OPENCLAW_STATE_DIR}/workspace
 
-COPY --from=astral/uv:0.10.5 /uv /uvx /usr/local/bin/
-COPY --from=rtk /usr/local/bin/rtk /usr/local/bin/rtk
-COPY --from=rtk /opt/rtk /opt/rtk
+COPY --from=carapace:rtk /usr/local/bin/rtk /usr/local/bin/rtk
 
 WORKDIR ${APP}
 
@@ -106,8 +60,15 @@ COPY --chown=node: bun.lock package.json ./
 COPY --chown=node: patches patches
 COPY --chown=node: plugins plugins
 
-RUN bun i --frozen-lockfile --backend=copyfile \
+RUN --mount=type=cache,target=${HOME}/.bun,uid=1000 \
+  # install dependencies
+  bun i --frozen-lockfile \
+  # install any missing runtime deps declared by bundled extensions
   && node ${APP}/node_modules/openclaw/scripts/postinstall-bundled-plugins.mjs \
+  # Bundled extensions ship pre-installed node_modules inside
+  # openclaw/dist/extensions/*/node_modules/. These deps need to be
+  # resolvable from the package root, so symlink them into the top-level
+  # node_modules (skip if already present to avoid clobbering).
   && for nm in ${APP}/node_modules/openclaw/dist/extensions/*/node_modules; do \
        [ -d "$nm" ] || continue; \
        for pkg in "$nm"/*; do \
@@ -121,11 +82,8 @@ RUN bun i --frozen-lockfile --backend=copyfile \
                [ ! -e "${APP}/node_modules/$name/$scoped_name" ] && ln -s "$scoped" "${APP}/node_modules/$name/$scoped_name" || true; \
              done \
              ;; \
-           .*) \
-             ;; \
-           *) \
-             [ ! -e "${APP}/node_modules/$name" ] && ln -s "$pkg" "${APP}/node_modules/$name" || true \
-             ;; \
+           .*) ;; \
+           *) [ ! -e "${APP}/node_modules/$name" ] && ln -s "$pkg" "${APP}/node_modules/$name" || true ;; \
          esac; \
        done; \
      done \
