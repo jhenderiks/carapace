@@ -1,0 +1,45 @@
+--- a/dist/channel2.runtime-DPdJuS82.js
++++ b/dist/channel2.runtime-DPdJuS82.js
+@@ -521,12 +521,18 @@
+ 				let healthCheckEnabled = getBotUpdateAt != null;
+ 				let healthCheckInFlight = false;
+ 				let healthCheckTimer;
++				let pingTimer;
++				let lastPongAt = Date.now();
+ 				let initialUpdateAt;
+ 				const clearTimers = () => {
+ 					if (healthCheckTimer !== void 0) {
+ 						clearTimeout(healthCheckTimer);
+ 						healthCheckTimer = void 0;
+ 					}
++					if (pingTimer !== void 0) {
++						clearInterval(pingTimer);
++						pingTimer = void 0;
++					}
+ 				};
+ 				const stopHealthChecks = () => {
+ 					healthCheckEnabled = false;
+@@ -577,6 +583,23 @@
+ 				};
+ 				ws.on("open", () => {
+ 					opened = true;
++					lastPongAt = Date.now();
++					ws.on("pong", () => {
++						lastPongAt = Date.now();
++					});
++					if (typeof ws.ping === "function") {
++						pingTimer = setInterval(() => {
++							if (Date.now() - lastPongAt > 6e4) {
++								opts.runtime.error?.("mattermost websocket pong timeout — terminating");
++								ws.terminate();
++								return;
++							}
++							try {
++								ws.ping();
++							} catch {
++							}
++						}, 3e4);
++					}
+ 					opts.statusSink?.({
+ 						connected: true,
+ 						lastConnectedAt: Date.now(),

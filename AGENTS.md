@@ -87,7 +87,7 @@ bun run plugins/context-mode/src/types.test.ts
 ## NOTES
 
 - The `rtk/` directory (37 wrapper scripts) is the legacy PATH-prepend approach. The `rtk-rewrite` plugin supersedes it but wrappers remain for the companion Docker image
-- `openclaw` binary comes from npm (`openclaw@2026.4.5`), not built from source
+- `openclaw` binary comes from npm (`openclaw@2026.4.8`), not built from source
 - Current patch: Mattermost websocket keepalive fix (upstream #44160)
 - Browser container gets static IP (172.20.0.10) because CDP rejects hostname-based Host headers
 - Container runs as `node` user (UID 1000) — mounted volumes must match ownership
