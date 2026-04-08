@@ -15,6 +15,7 @@
   },
   "patchedDependencies": {
     "openclaw@2026.4.8": "patches/openclaw@2026.4.8.patch",
+    "@mariozechner/pi-ai@0.65.2": "patches/@mariozechner%2Fpi-ai@0.65.2.patch",
   },
   "packages": {
     "@agentclientprotocol/sdk": ["@agentclientprotocol/sdk@0.18.0", "", { "peerDependencies": { "zod": "^3.25.0 || ^4.0.0" } }, "sha512-JQGEi3EetQ38DLPpYxxnnz1fyo1/3qQEkKfUmj4JfiOJCEtjGWQ0nl54IH4LZceO7zIOrtUUxc+2cJRQbBOChA=="],

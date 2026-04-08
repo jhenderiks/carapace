@@ -1,0 +1,28 @@
+diff --git a/dist/models.generated.js b/dist/models.generated.js
+index 08ffd3cb88e91b8e4735d5d61cd1f287a40ffb3f..e8f926b4efb295d808f9fb6c96cc71f5f012d7c6 100644
+--- a/dist/models.generated.js
++++ b/dist/models.generated.js
+@@ -6581,6 +6581,23 @@ export const MODELS = {
+             contextWindow: 204800,
+             maxTokens: 131072,
+         },
++        "glm-5.1": {
++            id: "glm-5.1",
++            name: "GLM-5.1",
++            api: "openai-completions",
++            provider: "opencode-go",
++            baseUrl: "https://opencode.ai/zen/go/v1",
++            reasoning: true,
++            input: ["text"],
++            cost: {
++                input: 1,
++                output: 3.2,
++                cacheRead: 0.2,
++                cacheWrite: 0,
++            },
++            contextWindow: 200000,
++            maxTokens: 131072,
++        },
+         "kimi-k2.5": {
+             id: "kimi-k2.5",
+             name: "Kimi K2.5",
