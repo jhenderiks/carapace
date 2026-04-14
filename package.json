@@ -18,7 +18,6 @@
     "typescript": "5.9.3"
   },
   "patchedDependencies": {
-    "openclaw@2026.4.12": "patches/openclaw@2026.4.12.patch",
-    "@mariozechner/pi-ai@0.65.2": "patches/@mariozechner%2Fpi-ai@0.65.2.patch"
+    "openclaw@2026.4.12": "patches/openclaw@2026.4.12.patch"
   }
 }
