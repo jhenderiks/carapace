@@ -127,13 +127,13 @@ A model entry needs: `id`, `name`, `api`, `provider`, `baseUrl`, `reasoning`, `i
 
 | Package | Patch | What |
 |---------|-------|------|
-| `openclaw@2026.4.8` | `patches/openclaw@2026.4.8.patch` | Mattermost websocket keepalive |
+| `openclaw@2026.4.12` | `patches/openclaw@2026.4.12.patch` | Mattermost websocket keepalive + disable explicit reply tags when threading is off |
 | `@mariozechner/pi-ai@0.65.2` | `patches/@mariozechner%2Fpi-ai@0.65.2.patch` | Add `glm-5.1` to `opencode-go` provider |
 
 ## NOTES
 
 - The `rtk/` directory (37 wrapper scripts) is the legacy PATH-prepend approach. The `rtk-rewrite` plugin supersedes it but wrappers remain for the companion Docker image
-- `openclaw` binary comes from npm (`openclaw@2026.4.8`), not built from source
+- `openclaw` binary comes from npm (`openclaw@2026.4.12`), not built from source
 - Browser container gets static IP (172.20.0.10) because CDP rejects hostname-based Host headers
 - Container runs as `node` user (UID 1000) — mounted volumes must match ownership
 - **This is a Raspberry Pi** — do not spawn heavy/parallel agents that consume excessive RAM
