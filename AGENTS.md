@@ -128,7 +128,6 @@ A model entry needs: `id`, `name`, `api`, `provider`, `baseUrl`, `reasoning`, `i
 | Package | Patch | What |
 |---------|-------|------|
 | `openclaw@2026.4.12` | `patches/openclaw@2026.4.12.patch` | Mattermost websocket keepalive + disable explicit reply tags when threading is off |
-| `@mariozechner/pi-ai@0.65.2` | `patches/@mariozechner%2Fpi-ai@0.65.2.patch` | Add `glm-5.1` to `opencode-go` provider |
 
 ## NOTES
 
