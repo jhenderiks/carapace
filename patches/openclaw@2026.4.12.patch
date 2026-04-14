@@ -1,6 +1,6 @@
---- a/dist/channel2.runtime-DPdJuS82.js
-+++ b/dist/channel2.runtime-DPdJuS82.js
-@@ -521,12 +521,18 @@
+--- a/dist/channel.runtime-BRzZhqmb.js
++++ b/dist/channel.runtime-BRzZhqmb.js
+@@ -531,11 +531,17 @@
  				let healthCheckEnabled = getBotUpdateAt != null;
  				let healthCheckInFlight = false;
  				let healthCheckTimer;
@@ -11,15 +11,14 @@
  					if (healthCheckTimer !== void 0) {
  						clearTimeout(healthCheckTimer);
  						healthCheckTimer = void 0;
- 					}
++					}
 +					if (pingTimer !== void 0) {
 +						clearInterval(pingTimer);
 +						pingTimer = void 0;
-+					}
+ 					}
  				};
  				const stopHealthChecks = () => {
- 					healthCheckEnabled = false;
-@@ -577,6 +583,23 @@
+@@ -587,6 +593,23 @@
  				};
  				ws.on("open", () => {
  					opened = true;
@@ -40,6 +39,16 @@
 +							}
 +						}, 3e4);
 +					}
- 					opts.statusSink?.({
- 						connected: true,
- 						lastConnectedAt: Date.now(),
+ 					captureWsEvent({
+ 						url: opts.wsUrl,
+ 						direction: "local",
+--- a/dist/channel-plugin-runtime-dBklJDgB.js
++++ b/dist/channel-plugin-runtime-dBklJDgB.js
+@@ -741,6 +741,7 @@
+ 			}),
+ 			resolveReplyToMode: (account, chatType) => resolveMattermostReplyToMode(account, chatType === "direct" || chatType === "group" || chatType === "channel" ? chatType : "channel")
+ 		},
++		allowExplicitReplyTagsWhenOff: false,
+ 		resolveReplyTransport: ({ threadId, replyToId }) => ({
+ 			replyToId: replyToId ?? (threadId != null ? String(threadId) : void 0),
+ 			threadId
