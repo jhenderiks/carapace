@@ -324,7 +324,7 @@ How you structure this is entirely up to you — the mounts are just directories
 
 Carapace ships a companion RTK image (`ghcr.io/jhenderiks/carapace-rtk`) built from `Dockerfile.rtk`. That image contains:
 
-- the `rtk` binary (currently v0.27.2)
+- the `rtk` binary (currently v0.36.0)
 - thin wrapper scripts from `rtk/` (mounted in the gateway image at `/opt/rtk`)
 
 The gateway image copies those artifacts during build (`ARG RTK_IMAGE=...`) so other projects can reuse the exact same RTK package without recompiling Rust or duplicating wrappers.

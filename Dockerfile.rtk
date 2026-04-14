@@ -1,6 +1,6 @@
 FROM rust:bookworm AS builder
 
-ARG RTK_VERSION=v0.35.0
+ARG RTK_VERSION=v0.36.0
 
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/usr/local/cargo/git \
