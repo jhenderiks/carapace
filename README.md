@@ -425,7 +425,7 @@ Carapace may ship patches for upstream dependencies when fixes haven't been rele
 
 | Package | Patch file | Fix | Upstream |
 |---|---|---|---|
-| `openclaw@2026.4.8` | `patches/openclaw@2026.4.8.patch` | Mattermost websocket can go stale silently — adds ping/pong keepalive with timeout-based terminate/reconnect | [#44160](https://github.com/openclaw/openclaw/issues/44160) |
+| `openclaw@2026.4.14` | `patches/openclaw@2026.4.14.patch` | Mattermost websocket can go stale silently — adds ping/pong keepalive with timeout-based terminate/reconnect | [#44160](https://github.com/openclaw/openclaw/issues/44160) |
 | `@mariozechner/pi-ai@0.65.2` | `patches/@mariozechner%2Fpi-ai@0.65.2.patch` | Add `glm-5.1` model to `opencode-go` provider (missing from upstream model list) | — |
 
 These are applied automatically by Bun during `bun install`. When upstream releases include the fixes, the patches will be removed.
