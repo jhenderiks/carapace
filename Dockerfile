@@ -1,5 +1,7 @@
 FROM node:24-bookworm-slim
 
+ARG RTK_IMAGE=carapace:rtk
+
 EXPOSE 18789
 
 RUN \
@@ -52,7 +54,7 @@ ENV PATH=${APP}/node_modules/.bin:/usr/lib/cargo/bin:$PATH
 ENV OPENCLAW_STATE_DIR=${HOME}/.openclaw
 ENV OPENCLAW_WORKSPACE_DIR=${OPENCLAW_STATE_DIR}/workspace
 
-COPY --from=carapace:rtk /usr/local/bin/rtk /usr/local/bin/rtk
+COPY --from=${RTK_IMAGE} /usr/local/bin/rtk /usr/local/bin/rtk
 
 WORKDIR ${APP}
 
