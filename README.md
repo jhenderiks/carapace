@@ -327,7 +327,7 @@ Carapace ships a companion RTK image (published as `ghcr.io/<owner>/<repo>-rtk`)
 - the `rtk` binary (currently v0.36.0)
 - thin wrapper scripts from `rtk/` (mounted in the gateway image at `/opt/rtk`)
 
-The gateway image copies the `rtk` binary from the image reference in `RTK_IMAGE` during build (`ARG RTK_IMAGE=carapace:rtk` + `COPY --from=${RTK_IMAGE} /usr/local/bin/rtk ...`), so other projects can reuse the exact same RTK package without recompiling Rust or duplicating wrappers.
+The gateway image resolves `RTK_IMAGE` into a named build stage (`ARG RTK_IMAGE=carapace:rtk` + `FROM ${RTK_IMAGE} AS rtk-image`) and copies the `rtk` binary from that stage, so other projects can reuse the exact same RTK package without recompiling Rust or duplicating wrappers.
 
 To build the RTK companion image locally for gateway/cli builds:
 
