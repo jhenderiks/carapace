@@ -1,5 +1,5 @@
---- a/dist/channel.runtime-BRzZhqmb.js
-+++ b/dist/channel.runtime-BRzZhqmb.js
+--- a/dist/channel.runtime-BF16Ta-J.js
++++ b/dist/channel.runtime-BF16Ta-J.js
 @@ -531,11 +531,17 @@
  				let healthCheckEnabled = getBotUpdateAt != null;
  				let healthCheckInFlight = false;
@@ -42,13 +42,3 @@
  					captureWsEvent({
  						url: opts.wsUrl,
  						direction: "local",
---- a/dist/channel-plugin-runtime-dBklJDgB.js
-+++ b/dist/channel-plugin-runtime-dBklJDgB.js
-@@ -741,6 +741,7 @@
- 			}),
- 			resolveReplyToMode: (account, chatType) => resolveMattermostReplyToMode(account, chatType === "direct" || chatType === "group" || chatType === "channel" ? chatType : "channel")
- 		},
-+		allowExplicitReplyTagsWhenOff: false,
- 		resolveReplyTransport: ({ threadId, replyToId }) => ({
- 			replyToId: replyToId ?? (threadId != null ? String(threadId) : void 0),
- 			threadId
