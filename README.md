@@ -322,24 +322,24 @@ How you structure this is entirely up to you — the mounts are just directories
 
 [rtk](https://github.com/rtk-ai/rtk) is a CLI proxy that compresses shell command output before it reaches the LLM context, reducing token usage by 40-90% on common operations (git, ls, grep, etc.).
 
-Carapace ships a companion RTK image (`ghcr.io/jhenderiks/carapace-rtk`) built from `Dockerfile.rtk`. That image contains:
+Carapace ships a companion RTK image (published as `ghcr.io/<owner>/<repo>-rtk`) built from `Dockerfile.rtk`. The gateway Dockerfile defaults to consuming a local image tagged `carapace:rtk`, and CI/other builds can override that with `--build-arg RTK_IMAGE=<image-ref>`. That image contains:
 
 - the `rtk` binary (currently v0.36.0)
 - thin wrapper scripts from `rtk/` (mounted in the gateway image at `/opt/rtk`)
 
-The gateway image copies those artifacts during build (`ARG RTK_IMAGE=...`) so other projects can reuse the exact same RTK package without recompiling Rust or duplicating wrappers.
+The gateway image copies the `rtk` binary from the image reference in `RTK_IMAGE` during build (`ARG RTK_IMAGE=carapace:rtk` + `COPY --from=${RTK_IMAGE} /usr/local/bin/rtk ...`), so other projects can reuse the exact same RTK package without recompiling Rust or duplicating wrappers.
 
-To build against a custom RTK image locally:
+To build the RTK companion image locally for gateway/cli builds:
 
 ```bash
-# build the RTK companion image
-docker build -f Dockerfile.rtk -t ghcr.io/jhenderiks/carapace-rtk:latest .
+# build the RTK companion image with the tag the gateway Dockerfile expects
+docker build -f Dockerfile.rtk -t carapace:rtk .
 
 # build gateway/cli using that image
-RTK_IMAGE=ghcr.io/jhenderiks/carapace-rtk:latest docker compose build
+docker compose build
 ```
 
-If `RTK_IMAGE` is omitted, the Dockerfile falls back to a local `rtk-local` build stage and compiles rtk from source.
+The gateway Dockerfile does not compile rtk itself; it expects the image named by `RTK_IMAGE` to be available locally or via your build pipeline.
 
 **Two integration modes** (use one, not both):
 
@@ -421,12 +421,11 @@ Carapace is defense-in-depth, not a sandbox. It reduces risk — it doesn't elim
 
 ## Patches
 
-Carapace may ship patches for upstream dependencies when fixes haven't been released yet. Current patches:
+Carapace may ship patches for upstream dependencies when fixes haven't been released yet. Current patch:
 
 | Package | Patch file | Fix | Upstream |
 |---|---|---|---|
 | `openclaw@2026.4.14` | `patches/openclaw@2026.4.14.patch` | Mattermost websocket can go stale silently — adds ping/pong keepalive with timeout-based terminate/reconnect | [#44160](https://github.com/openclaw/openclaw/issues/44160) |
-| `@mariozechner/pi-ai@0.65.2` | `patches/@mariozechner%2Fpi-ai@0.65.2.patch` | Add `glm-5.1` model to `opencode-go` provider (missing from upstream model list) | — |
 
 These are applied automatically by Bun during `bun install`. When upstream releases include the fixes, the patches will be removed.
 
