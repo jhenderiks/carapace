@@ -30,7 +30,7 @@ carapace/
 | Docker build | `Dockerfile` | node:24-bookworm-slim, copies rtk binary from companion image |
 | Container security | `docker-compose.yml` | read_only, cap_drop ALL, tmpfs, pid limits |
 | Browser isolation | `browser/` | Separate container, static IP 172.20.0.10 for CDP |
-| CI/CD | `.github/workflows/` | ci.yml (typecheck), container-image.yml (multi-arch GHCR) |
+| CI/CD | `.github/workflows/` | ci.yml (typecheck + test), container-image.yml (multi-arch GHCR) |
 | Agent identity | `workspace/SOUL.md` | Mounted into container at runtime |
 | Upstream patches | `patches/` | Auto-applied by `bun install` |
 
@@ -38,7 +38,7 @@ carapace/
 
 - **No workspaces**: Manual monorepo — plugins are separate packages without npm/bun workspace linking
 - **No linter/formatter config**: No eslint, prettier, or editorconfig. Relies on defaults
-- **noEmit TypeScript**: tsconfig exists for type-checking only (`bun run tsc`), no compile step
+- **noEmit TypeScript**: tsconfig exists for type-checking only (`bun tsc --noEmit`), no compile step
 - **Plugin pattern**: Each plugin exports a default handler from `src/handler.ts` via `index.ts`. Config defined in `openclaw.plugin.json`
 - **ESM only**: `"type": "module"` in root, `NodeNext` module resolution
 - **Tests co-located**: `*.test.ts` files sit next to source in `src/`. Node.js built-in `assert`, no test framework
@@ -64,7 +64,7 @@ carapace/
 ```bash
 # Dev
 bun install              # Install deps + apply patches
-bun run tsc              # Type-check plugins (no build output)
+bun tsc --noEmit         # Type-check plugins (no build output)
 
 # Docker
 bun run build            # docker compose build
@@ -74,10 +74,10 @@ bun run logs             # docker compose logs -f gateway
 bun run setup            # Interactive setup wizard
 bun run down             # docker compose down
 
-# Tests (no unified runner — run per-file)
-bun run plugins/rtk-rewrite/src/routing.test.ts
-bun run plugins/mcp-bridge/src/handler.test.ts
-bun run plugins/context-mode/src/types.test.ts
+# Tests
+bun test plugins/*/src/*.test.ts
+# or run a single file
+bun test plugins/rtk-rewrite/src/routing.test.ts
 ```
 
 ## PATCHING MODELS
@@ -107,7 +107,7 @@ A model entry needs: `id`, `name`, `api`, `provider`, `baseUrl`, `reasoning`, `i
 1. Find the target provider's existing entries in `models.generated.js` for the baseUrl, api, headers, and compat pattern
 2. If the model exists under a different provider (e.g. `glm-5.1` under `zai`), use that for spec reference (contextWindow, maxTokens, cost)
 3. `bun patch @mariozechner/pi-ai` → edit `dist/models.generated.js` → `bun patch --commit 'node_modules/@mariozechner/pi-ai'`
-4. Verify: `bun install && bun run tsc`
+4. Verify: `bun install && bun tsc --noEmit`
 
 ### Provider notes
 
@@ -127,12 +127,12 @@ A model entry needs: `id`, `name`, `api`, `provider`, `baseUrl`, `reasoning`, `i
 
 | Package | Patch | What |
 |---------|-------|------|
-| `openclaw@2026.4.12` | `patches/openclaw@2026.4.12.patch` | Mattermost websocket keepalive + disable explicit reply tags when threading is off |
+| `openclaw@2026.4.14` | `patches/openclaw@2026.4.14.patch` | Mattermost websocket ping/pong keepalive with pong-timeout reconnect |
 
 ## NOTES
 
 - The `rtk/` directory (37 wrapper scripts) is the legacy PATH-prepend approach. The `rtk-rewrite` plugin supersedes it but wrappers remain for the companion Docker image
-- `openclaw` binary comes from npm (`openclaw@2026.4.12`), not built from source
+- `openclaw` binary comes from npm (`openclaw@2026.4.14`), not built from source
 - Browser container gets static IP (172.20.0.10) because CDP rejects hostname-based Host headers
 - Container runs as `node` user (UID 1000) — mounted volumes must match ownership
 - **This is a Raspberry Pi** — do not spawn heavy/parallel agents that consume excessive RAM

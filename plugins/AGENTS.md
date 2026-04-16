@@ -15,7 +15,7 @@ Every plugin follows this structure:
 └── src/
     ├── handler.ts          # Default export: plugin lifecycle hooks
     ├── types.ts            # Config types + normalization
-    └── *.test.ts           # Co-located tests (node:assert, no framework)
+    └── *.test.ts           # Co-located tests (node:assert, run via `bun test`)
 ```
 
 **Lifecycle hooks** available to plugins:
@@ -60,6 +60,6 @@ Key files: `handler.ts` (lifecycle), `types.ts` (config normalization + tests).
 
 - Handlers are always the default export
 - Types files export both `Raw*Config` and `Normalized*Config` with a `normalize()` function
-- Test files use `node:assert/strict` + `node:test` — no external test framework
+- Test files use `node:assert` and run under `bun test` — no external test framework
 - Imports use `.js` extension (NodeNext resolution requires it even for .ts files)
 - mcp-bridge has its own `node_modules/` (depends on `@modelcontextprotocol/sdk`); others rely on root deps

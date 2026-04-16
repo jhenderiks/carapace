@@ -17,7 +17,7 @@ OpenClaw plugin that bridges MCP stdio servers into agent tools.
 ## Install (linked local plugin)
 
 ```bash
-openclaw plugins install -l /home/taka/apps/arlo/src/projects/mcp-bridge-plugin
+openclaw plugins install -l ./plugins/mcp-bridge
 ```
 
 ## Example config
