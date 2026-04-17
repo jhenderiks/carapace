@@ -15,7 +15,6 @@ on:
       - bun.lock
       - package.json
       - patches/**
-      - rtk/**
       - .github/workflows/container-image.yml
   push:
     branches:
@@ -28,7 +27,6 @@ on:
       - bun.lock
       - package.json
       - patches/**
-      - rtk/**
       - .github/workflows/container-image.yml
 
 concurrency:
