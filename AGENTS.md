@@ -46,6 +46,7 @@ carapace/
 ## ANTI-PATTERNS (THIS PROJECT)
 
 - **Never enable `cm_ctx_execute`/`cm_ctx_batch_execute`**: Disabled by default to enforce exec→rtk split
+- **Never run local Docker image builds unless the user explicitly asks**: `docker build`, `docker compose build`, and similar image-build validation are too heavy for normal agent sessions here; prefer static checks plus CI
 - **Never run Chromium in gateway container**: Use the isolated `browser` service instead
 - **Don't touch `workspace/AGENTS.md`**: That file is the agent's runtime workspace config, not project docs
 
