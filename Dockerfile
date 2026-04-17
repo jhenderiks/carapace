@@ -1,8 +1,11 @@
 ARG RTK_IMAGE=carapace:rtk
+ARG RTK_VERSION=v0.37.0
 
 FROM ${RTK_IMAGE} AS rtk-image
 
 FROM node:24-bookworm-slim
+
+ARG RTK_VERSION=v0.37.0
 
 EXPOSE 18789
 
@@ -90,7 +93,13 @@ RUN --mount=type=cache,target=${HOME}/.bun,uid=1000 \
            *) [ ! -e "${APP}/node_modules/$name" ] && ln -s "$pkg" "${APP}/node_modules/$name" || true ;; \
          esac; \
        done; \
-     done \
-  && chmod -R u=rwX,go=rX ${APP}/node_modules/openclaw/dist/extensions
+      done \
+  # fetch RTK's upstream OpenClaw plugin into the image-managed plugin path
+  && mkdir -p ${APP}/plugins/rtk-rewrite \
+  && curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/${RTK_VERSION}/openclaw/index.ts \
+       -o ${APP}/plugins/rtk-rewrite/index.ts \
+  && curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/${RTK_VERSION}/openclaw/openclaw.plugin.json \
+       -o ${APP}/plugins/rtk-rewrite/openclaw.plugin.json \
+  && chmod -R u=rwX,go=rX ${APP}/node_modules/openclaw/dist/extensions ${APP}/plugins
 
 ENTRYPOINT ["openclaw"]
