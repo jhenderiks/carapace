@@ -46,9 +46,9 @@ Exports public API beyond just the handler — other plugins can import `McpServ
 
 ## rtk-rewrite
 
-Intercepts `exec` tool calls via `before_tool_call` hook. Parses the command, looks up routing rules, rewrites through `rtk` for token compression. Same logic as the shell wrappers in `rtk/` but without PATH manipulation.
+Intercepts `exec` tool calls via `before_tool_call` and delegates rewrite decisions to `rtk rewrite`. The plugin itself is intentionally thin; upstream RTK owns the command registry and filtering logic.
 
-Key files: `handler.ts` (hook registration), `routing.ts` (command → rtk mapping rules + tests).
+Key files: `handler.ts` (hook registration + `rtk rewrite` delegation), `handler.test.ts` (plugin behavior tests).
 
 ## context-mode
 

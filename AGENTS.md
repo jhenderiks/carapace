@@ -12,10 +12,10 @@ carapace/
 │   ├── mcp-bridge/   # MCP stdio server → OpenClaw tool bridge
 │   ├── rtk-rewrite/  # exec hook: rewrites commands through rtk
 │   └── context-mode/ # Spawns context-mode MCP, registers cm_* tools
-├── rtk/              # 37 thin shell wrappers (cat→rtk read, rg→rtk grep, etc.)
 ├── browser/          # Isolated Chromium container (Dockerfile + entrypoint.sh)
 ├── workspace/        # Agent workspace (SOUL.md, memory/, skills/) — mounted volume
 ├── config/           # OpenClaw state — mounted volume, not in git
+├── rtk-data/         # Optional RTK history mount (ignored, created locally)
 ├── patches/          # Bun patches for upstream deps
 └── .github/workflows/  # CI (typecheck) + container image build (multi-arch)
 ```
@@ -26,7 +26,7 @@ carapace/
 |------|----------|-------|
 | Add/modify a plugin | `plugins/{name}/src/` | Each plugin has own package.json + openclaw.plugin.json |
 | Plugin entry point | `plugins/{name}/index.ts` | Re-exports from `./src/handler.js` |
-| RTK command mappings | `rtk/` + `plugins/rtk-rewrite/src/routing.ts` | Wrappers are legacy; plugin does the routing now |
+| RTK command rewriting | `plugins/rtk-rewrite/src/handler.ts` | Thin OpenClaw hook that delegates to `rtk rewrite` |
 | Docker build | `Dockerfile` | node:24-bookworm-slim, copies rtk binary from companion image |
 | Container security | `docker-compose.yml` | read_only, cap_drop ALL, tmpfs, pid limits |
 | Browser isolation | `browser/` | Separate container, static IP 172.20.0.10 for CDP |
@@ -46,7 +46,6 @@ carapace/
 
 ## ANTI-PATTERNS (THIS PROJECT)
 
-- **Never use both RTK modes**: Use `rtk-rewrite` plugin OR `tools.exec.pathPrepend` — never both
 - **Never enable `cm_ctx_execute`/`cm_ctx_batch_execute`**: Disabled by default to enforce exec→rtk split
 - **Never run Chromium in gateway container**: Use the isolated `browser` service instead
 - **Don't touch `workspace/AGENTS.md`**: That file is the agent's runtime workspace config, not project docs
@@ -131,7 +130,6 @@ A model entry needs: `id`, `name`, `api`, `provider`, `baseUrl`, `reasoning`, `i
 
 ## NOTES
 
-- The `rtk/` directory (37 wrapper scripts) is the legacy PATH-prepend approach. The `rtk-rewrite` plugin supersedes it but wrappers remain for the companion Docker image
 - `openclaw` binary comes from npm (`openclaw@2026.4.14`), not built from source
 - Browser container gets static IP (172.20.0.10) because CDP rejects hostname-based Host headers
 - Container runs as `node` user (UID 1000) — mounted volumes must match ownership
