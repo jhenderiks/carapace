@@ -51,7 +51,7 @@ The container image includes:
 | **Media** | ffmpeg, imagemagick, yt-dlp |
 | **Dev** | git, gh (GitHub CLI), ssh, python3, bun, typescript |
 | **Network** | curl, wget |
-| **Token Optimization** | [rtk](https://github.com/rtk-ai/rtk) (with selective shell wrappers) |
+| **Token Optimization** | [rtk](https://github.com/rtk-ai/rtk) (via OpenClaw plugin rewrite hook) |
 | **System** | trash-cli, unzip |
 
 ### Optional: Isolated Browser Container
@@ -151,7 +151,7 @@ Everything else under `/home/openclaw` is a 2GB tmpfs — it resets on restart. 
 
 ## Plugins
 
-Carapace includes OpenClaw plugins in `plugins/`. Each plugin is loaded via the gateway config's `plugins.load.paths` and `plugins.allow` lists, and can be scoped per-agent using `tools.deny`.
+Carapace keeps repo-local OpenClaw plugins in `plugins/`. RTK is the exception: the gateway image fetches RTK's official OpenClaw plugin from the matching RTK release and installs it into `/opt/openclaw/plugins/rtk-rewrite` during the image build. All plugins are then loaded via the gateway config's `plugins.load.paths` and `plugins.allow` lists, and can be scoped per-agent using `tools.deny`.
 
 ### mcp-bridge
 
@@ -163,9 +163,9 @@ See [`plugins/mcp-bridge/README.md`](plugins/mcp-bridge/README.md) for config de
 
 ### rtk-rewrite
 
-Replaces rtk's PATH-prepend shell wrappers with a `before_tool_call` hook. Intercepts `exec` tool calls and rewrites commands through rtk for token compression — same routing logic as the wrapper scripts, but in TypeScript with no PATH manipulation.
+Uses RTK's official OpenClaw plugin model: a `before_tool_call` hook delegates `exec` commands to `rtk rewrite`, which returns the optimized command when RTK has a matching filter.
 
-When this plugin is enabled, `tools.exec.pathPrepend` is not needed.
+Carapace does not vendor the plugin source in this repo. Instead, the RTK companion image copies the entire upstream `openclaw/` plugin directory from the matching RTK release, and the gateway image copies that directory into `/opt/openclaw/plugins/rtk-rewrite`.
 
 ### context-mode
 
@@ -322,12 +322,11 @@ How you structure this is entirely up to you — the mounts are just directories
 
 [rtk](https://github.com/rtk-ai/rtk) is a CLI proxy that compresses shell command output before it reaches the LLM context, reducing token usage by 40-90% on common operations (git, ls, grep, etc.).
 
-Carapace ships a companion RTK image (published as `ghcr.io/<owner>/<repo>-rtk`) built from `Dockerfile.rtk`. The gateway Dockerfile defaults to consuming a local image tagged `carapace:rtk`, and CI/other builds can override that with `--build-arg RTK_IMAGE=<image-ref>`. That image contains:
+Carapace ships a companion RTK image (published as `ghcr.io/<owner>/<repo>-rtk`) built from `Dockerfile.rtk`. The gateway Dockerfile defaults to consuming a local image tagged `carapace:rtk`, and CI/other builds can override that with `--build-arg RTK_IMAGE=<image-ref>`.
 
-- the `rtk` binary (currently v0.36.0)
-- thin wrapper scripts from `rtk/` (mounted in the gateway image at `/opt/rtk`)
+The gateway image resolves `RTK_IMAGE` into a named build stage (`ARG RTK_IMAGE=carapace:rtk` + `FROM ${RTK_IMAGE} AS rtk-image`) and copies the `rtk` binary plus the upstream `openclaw/` plugin directory from that stage, so other projects can reuse the exact same RTK package without recompiling Rust.
 
-The gateway image resolves `RTK_IMAGE` into a named build stage (`ARG RTK_IMAGE=carapace:rtk` + `FROM ${RTK_IMAGE} AS rtk-image`) and copies the `rtk` binary from that stage, so other projects can reuse the exact same RTK package without recompiling Rust or duplicating wrappers.
+That companion image carries both the `rtk` binary and RTK's official OpenClaw plugin directory, so Carapace tracks upstream plugin behavior without carrying a local plugin copy.
 
 To build the RTK companion image locally for gateway/cli builds:
 
@@ -341,41 +340,11 @@ docker compose build
 
 The gateway Dockerfile does not compile rtk itself; it expects the image named by `RTK_IMAGE` to be available locally or via your build pipeline.
 
-**Two integration modes** (use one, not both):
-
-**1. Plugin (carapace default):** The `rtk-rewrite` plugin intercepts `exec` tool calls via a `before_tool_call` hook and rewrites commands through rtk. No PATH manipulation needed. See [rtk-rewrite](#rtk-rewrite).
-
-**2. PATH prepend (legacy):** Set `tools.exec.pathPrepend` to `["/opt/rtk"]` in your OpenClaw config. Shell wrapper scripts intercept commands via PATH ordering.
+**Integration mode:** The `rtk-rewrite` plugin intercepts `exec` tool calls via a `before_tool_call` hook and delegates rewrite decisions to `rtk rewrite`. No PATH manipulation is needed.
 
 **Built-in split:** shell commands go through `exec` + rtk. Context-mode is kept for the things rtk does not solve well — file processing, indexing/search, fetch-and-index, and retrieval-heavy workflows. To enforce that split, carapace disables `cm_ctx_execute` and `cm_ctx_batch_execute` by default.
 
-**Common mappings:**
-
-| Command | Routes to | Why |
-|---|---|---|
-| `cat file` | `rtk read file` | rtk's file reader with intelligent filtering |
-| `rg pattern` | `rtk grep pattern` | ripgrep → rtk's compact grep |
-| `eslint` | `rtk lint` | rtk's lint formatter |
-| `head -N file` | `rtk read file --max-lines N` | Only when a file arg is present (piped `head` passes through) |
-| `mypy` | `rtk mypy` | Grouped type-check output |
-| `aws sts get-caller-identity` | `rtk aws sts get-caller-identity` | AWS CLI output formatter |
-| `psql -c 'select 1'` | `rtk psql -c 'select 1'` | SQL output formatter |
-
-**Configuration (PATH prepend mode)** — add the following to your OpenClaw config and restart the gateway:
-
-```json
-{
-  "tools": {
-    "exec": {
-      "pathPrepend": ["/opt/rtk"]
-    }
-  }
-}
-```
-
-**Why `pathPrepend` instead of container `PATH`?** `pathPrepend` only affects agent-initiated `exec` tool calls. Container-internal processes (OpenClaw itself, git hooks, npm scripts) still use the real binaries. This avoids subtle breakage in non-LLM contexts where compressed output would be wrong.
-
-If using the `rtk-rewrite` plugin, `pathPrepend` is not needed — the plugin handles all command rewriting via hooks.
+**What gets rewritten:** whatever `rtk rewrite` currently supports. That keeps Carapace aligned with upstream RTK without maintaining a separate command registry here.
 
 **Tracking savings:** rtk records token savings in a SQLite database at `~/.local/share/rtk/history.db`. Run `rtk gain` inside the container to see cumulative stats, or `rtk gain --graph` for a daily breakdown. To persist this across restarts, bind-mount the directory (e.g., `./rtk-data:/home/openclaw/.local/share/rtk:rw`).
 

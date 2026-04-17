@@ -21,3 +21,4 @@ Thumbs.db
 config/
 workspace/
 .local/
+rtk-data/

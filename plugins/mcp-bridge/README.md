@@ -12,7 +12,7 @@ OpenClaw plugin that bridges MCP stdio servers into agent tools.
 - ✅ Graceful disconnect on `gateway_stop`
 - ⚠️ `lifecycle: "session"` is currently treated as shared/gateway lifecycle
 
-> **Note:** RTK command rewriting was originally planned here but shipped as a standalone plugin (`rtk-rewrite`). Context-mode also shipped as a separate plugin (`context-mode`) — see `plugins/context-mode/`.
+> **Note:** RTK command rewriting is provided by RTK's upstream OpenClaw plugin, fetched during the gateway image build. Context-mode ships as a separate repo-local plugin — see `plugins/context-mode/`.
 
 ## Install (linked local plugin)
 

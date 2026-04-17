@@ -3,13 +3,20 @@ FROM rust:bookworm AS builder
 ARG RTK_VERSION=v0.37.0
 
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/usr/local/cargo/git \
-    cargo install --git https://github.com/rtk-ai/rtk --tag ${RTK_VERSION}
+  --mount=type=cache,target=/usr/local/cargo/git \
+  cargo install --git https://github.com/rtk-ai/rtk --tag ${RTK_VERSION}
 
 FROM debian:bookworm-slim AS rtk
 
+ARG RTK_VERSION=v0.37.0
+
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+  && apt-get install -y --no-install-recommends ca-certificates git \
+  && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /usr/local/cargo/bin/rtk /usr/local/bin/rtk
+
+RUN git clone --depth 1 --branch ${RTK_VERSION} https://github.com/rtk-ai/rtk.git /tmp/rtk \
+  && mkdir -p /opt/rtk-openclaw-plugin \
+  && cp -R /tmp/rtk/openclaw/. /opt/rtk-openclaw-plugin/ \
+  && rm -rf /tmp/rtk

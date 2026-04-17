@@ -2,7 +2,7 @@
 
 ## OVERVIEW
 
-Three OpenClaw plugins extending the gateway: MCP server bridging, RTK command rewriting, and context-mode FTS5 search. All share the same plugin architecture pattern.
+Two repo-local OpenClaw plugins extend the gateway: MCP server bridging and context-mode FTS5 search. RTK command rewriting comes from RTK's upstream OpenClaw plugin directory, which the RTK companion image copies from the RTK repo and the gateway image copies into `/opt/openclaw/plugins/rtk-rewrite`.
 
 ## PLUGIN ARCHITECTURE
 
@@ -18,10 +18,9 @@ Every plugin follows this structure:
     └── *.test.ts           # Co-located tests (node:assert, run via `bun test`)
 ```
 
-**Lifecycle hooks** available to plugins:
+**Lifecycle hooks** available to repo-local plugins:
 - `gateway_start` — register tools, spawn processes
 - `gateway_stop` — cleanup, disconnect
-- `before_tool_call` — intercept/rewrite tool calls (used by rtk-rewrite)
 
 **Config flow**: `openclaw.plugin.json` defines the JSON schema → OpenClaw validates at load → handler receives typed config.
 
@@ -30,7 +29,6 @@ Every plugin follows this structure:
 | Task | Location | Notes |
 |------|----------|-------|
 | Add new MCP server | Config only — no code change | Add entry to `plugins.entries.mcp-bridge.config.servers` |
-| Change RTK routing | `rtk-rewrite/src/routing.ts` | Maps command → rtk subcommand |
 | Change context-mode tool prefix | Config: `plugins.entries.context-mode.config.toolPrefix` | Default: `cm` |
 | Skip context-mode tools | Config: `plugins.entries.context-mode.config.skipTools` | Array of tool names |
 | Understand MCP bridging internals | `mcp-bridge/src/bridge.ts` + `runtime.ts` | Process spawn, tool discovery, call proxy |
@@ -43,12 +41,6 @@ Bridges MCP stdio servers into OpenClaw tools. Spawns child processes, discovers
 Key files: `bridge.ts` (McpServerBridge class), `runtime.ts` (retry logic, normalization utils), `schema.ts` (JSON schema normalization for MCP tool inputs), `handler.ts` (lifecycle hooks).
 
 Exports public API beyond just the handler — other plugins can import `McpServerBridge`, `executeWithRetry`, etc.
-
-## rtk-rewrite
-
-Intercepts `exec` tool calls via `before_tool_call` hook. Parses the command, looks up routing rules, rewrites through `rtk` for token compression. Same logic as the shell wrappers in `rtk/` but without PATH manipulation.
-
-Key files: `handler.ts` (hook registration), `routing.ts` (command → rtk mapping rules + tests).
 
 ## context-mode
 
