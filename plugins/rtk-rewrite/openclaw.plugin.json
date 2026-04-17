@@ -1,8 +1,10 @@
 {
   "id": "rtk-rewrite",
-  "name": "RTK Rewrite",
-  "description": "Rewrite exec commands through rtk for output compression",
-  "version": "0.2.0",
+  "name": "RTK Token Optimizer",
+  "version": "1.0.0",
+  "description": "Transparently rewrites shell commands to their RTK equivalents for 60-90% LLM token savings",
+  "homepage": "https://github.com/rtk-ai/rtk",
+  "license": "MIT",
   "configSchema": {
     "type": "object",
     "additionalProperties": false,
@@ -10,13 +12,17 @@
       "enabled": {
         "type": "boolean",
         "default": true,
-        "description": "Master switch for RTK command rewrites"
+        "description": "Enable automatic command rewriting to RTK equivalents"
       },
-      "binary": {
-        "type": "string",
-        "default": "/usr/local/bin/rtk",
-        "description": "Path to the rtk binary"
+      "verbose": {
+        "type": "boolean",
+        "default": false,
+        "description": "Log rewrite decisions to console for debugging"
       }
     }
+  },
+  "uiHints": {
+    "enabled": { "label": "Enable RTK rewriting" },
+    "verbose": { "label": "Verbose logging" }
   }
 }
