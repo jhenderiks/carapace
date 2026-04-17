@@ -8,9 +8,8 @@ Carapace is a security-hardened Docker container for running [OpenClaw](https://
 
 ```
 carapace/
-├── plugins/          # OpenClaw TypeScript plugins (3 packages)
+├── plugins/          # Repo-local OpenClaw TypeScript plugins (2 packages)
 │   ├── mcp-bridge/   # MCP stdio server → OpenClaw tool bridge
-│   ├── rtk-rewrite/  # exec hook: rewrites commands through rtk
 │   └── context-mode/ # Spawns context-mode MCP, registers cm_* tools
 ├── browser/          # Isolated Chromium container (Dockerfile + entrypoint.sh)
 ├── workspace/        # Agent workspace (SOUL.md, memory/, skills/) — mounted volume
@@ -26,7 +25,7 @@ carapace/
 |------|----------|-------|
 | Add/modify a plugin | `plugins/{name}/src/` | Each plugin has own package.json + openclaw.plugin.json |
 | Plugin entry point | `plugins/{name}/index.ts` | Re-exports from `./src/handler.js` |
-| RTK command rewriting | `plugins/rtk-rewrite/src/handler.ts` | Thin OpenClaw hook that delegates to `rtk rewrite` |
+| RTK command rewriting | `Dockerfile` + `openclaw.json` | Upstream RTK plugin fetched into `/opt/openclaw/plugins/rtk-rewrite` at build time |
 | Docker build | `Dockerfile` | node:24-bookworm-slim, copies rtk binary from companion image |
 | Container security | `docker-compose.yml` | read_only, cap_drop ALL, tmpfs, pid limits |
 | Browser isolation | `browser/` | Separate container, static IP 172.20.0.10 for CDP |
@@ -75,8 +74,6 @@ bun run down             # docker compose down
 
 # Tests
 bun test plugins/*/src/*.test.ts
-# or run a single file
-bun test plugins/rtk-rewrite/src/routing.test.ts
 ```
 
 ## PATCHING MODELS
@@ -131,6 +128,7 @@ A model entry needs: `id`, `name`, `api`, `provider`, `baseUrl`, `reasoning`, `i
 ## NOTES
 
 - `openclaw` binary comes from npm (`openclaw@2026.4.14`), not built from source
+- RTK's OpenClaw plugin is fetched from the upstream RTK repo during image build; it is not vendored under `plugins/`
 - Browser container gets static IP (172.20.0.10) because CDP rejects hostname-based Host headers
 - Container runs as `node` user (UID 1000) — mounted volumes must match ownership
 - **This is a Raspberry Pi** — do not spawn heavy/parallel agents that consume excessive RAM
