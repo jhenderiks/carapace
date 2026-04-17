@@ -8,8 +8,16 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
 
 FROM debian:bookworm-slim AS rtk
 
+ARG RTK_VERSION=v0.37.0
+
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates \
+    && apt-get install -y --no-install-recommends ca-certificates curl \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /usr/local/cargo/bin/rtk /usr/local/bin/rtk
+
+RUN mkdir -p /opt/rtk-openclaw-plugin \
+    && curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/${RTK_VERSION}/openclaw/index.ts \
+         -o /opt/rtk-openclaw-plugin/index.ts \
+    && curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/${RTK_VERSION}/openclaw/openclaw.plugin.json \
+         -o /opt/rtk-openclaw-plugin/openclaw.plugin.json
