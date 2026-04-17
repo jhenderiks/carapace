@@ -44,7 +44,7 @@ RUN \
   # set home directory
   && usermod -d ${HOME} node \
   # create directories
-  && mkdir -p ${APP} ${HOME} \
+  && mkdir -p ${APP} ${APP}/plugins ${HOME} \
   # set ownership
   && chown -R node: ${APP} ${HOME}
 
@@ -57,7 +57,7 @@ ENV OPENCLAW_STATE_DIR=${HOME}/.openclaw
 ENV OPENCLAW_WORKSPACE_DIR=${OPENCLAW_STATE_DIR}/workspace
 
 COPY --from=rtk-image /usr/local/bin/rtk /usr/local/bin/rtk
-COPY --from=rtk-image /opt/rtk-openclaw-plugin /opt/openclaw/plugins/rtk-rewrite
+COPY --chown=node: --from=rtk-image /opt/rtk-openclaw-plugin /opt/openclaw/plugins/rtk-rewrite
 
 WORKDIR ${APP}
 
