@@ -151,7 +151,7 @@ Everything else under `/home/openclaw` is a 2GB tmpfs — it resets on restart. 
 
 ## Plugins
 
-Carapace includes OpenClaw plugins in `plugins/`. Each plugin is loaded via the gateway config's `plugins.load.paths` and `plugins.allow` lists, and can be scoped per-agent using `tools.deny`.
+Carapace keeps repo-local OpenClaw plugins in `plugins/`. RTK is the exception: the gateway image fetches RTK's official OpenClaw plugin from the matching RTK release and installs it into `/opt/openclaw/plugins/rtk-rewrite` during the image build. All plugins are then loaded via the gateway config's `plugins.load.paths` and `plugins.allow` lists, and can be scoped per-agent using `tools.deny`.
 
 ### mcp-bridge
 
@@ -165,7 +165,7 @@ See [`plugins/mcp-bridge/README.md`](plugins/mcp-bridge/README.md) for config de
 
 Uses RTK's official OpenClaw plugin model: a `before_tool_call` hook delegates `exec` commands to `rtk rewrite`, which returns the optimized command when RTK has a matching filter.
 
-All rewrite logic now lives in the RTK binary itself, so Carapace picks up new RTK rules by upgrading RTK rather than carrying its own TypeScript routing table.
+Carapace does not vendor the plugin source in this repo. Instead, `Dockerfile` fetches `openclaw/index.ts` and `openclaw/openclaw.plugin.json` from the RTK GitHub release that matches `RTK_VERSION` and places them at `/opt/openclaw/plugins/rtk-rewrite`.
 
 ### context-mode
 
@@ -322,9 +322,11 @@ How you structure this is entirely up to you — the mounts are just directories
 
 [rtk](https://github.com/rtk-ai/rtk) is a CLI proxy that compresses shell command output before it reaches the LLM context, reducing token usage by 40-90% on common operations (git, ls, grep, etc.).
 
-Carapace ships a companion RTK image (published as `ghcr.io/<owner>/<repo>-rtk`) built from `Dockerfile.rtk`. The gateway Dockerfile defaults to consuming a local image tagged `carapace:rtk`, and CI/other builds can override that with `--build-arg RTK_IMAGE=<image-ref>`. That image contains:
+Carapace ships a companion RTK image (published as `ghcr.io/<owner>/<repo>-rtk`) built from `Dockerfile.rtk`. The gateway Dockerfile defaults to consuming a local image tagged `carapace:rtk`, and CI/other builds can override that with `--build-arg RTK_IMAGE=<image-ref>`.
 
 The gateway image resolves `RTK_IMAGE` into a named build stage (`ARG RTK_IMAGE=carapace:rtk` + `FROM ${RTK_IMAGE} AS rtk-image`) and copies the `rtk` binary from that stage, so other projects can reuse the exact same RTK package without recompiling Rust.
+
+The gateway build separately fetches RTK's official OpenClaw plugin files from the same RTK release line and installs them into `/opt/openclaw/plugins/rtk-rewrite`, so Carapace tracks upstream plugin behavior without carrying a local plugin copy.
 
 To build the RTK companion image locally for gateway/cli builds:
 
