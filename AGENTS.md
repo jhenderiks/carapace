@@ -25,7 +25,7 @@ carapace/
 |------|----------|-------|
 | Add/modify a plugin | `plugins/{name}/src/` | Each plugin has own package.json + openclaw.plugin.json |
 | Plugin entry point | `plugins/{name}/index.ts` | Re-exports from `./src/handler.js` |
-| RTK command rewriting | `Dockerfile` + `Dockerfile.rtk` + `openclaw.json` | RTK image provides the upstream plugin, gateway copies it into `/opt/openclaw/plugins/rtk-rewrite` |
+| RTK command rewriting | `Dockerfile` + `Dockerfile.rtk` + `openclaw.json` | RTK image provides the upstream `openclaw/` plugin directory, gateway copies it into `/opt/openclaw/plugins/rtk-rewrite` |
 | Docker build | `Dockerfile` | node:24-bookworm-slim, copies rtk binary from companion image |
 | Container security | `docker-compose.yml` | read_only, cap_drop ALL, tmpfs, pid limits |
 | Browser isolation | `browser/` | Separate container, static IP 172.20.0.10 for CDP |
@@ -128,7 +128,7 @@ A model entry needs: `id`, `name`, `api`, `provider`, `baseUrl`, `reasoning`, `i
 ## NOTES
 
 - `openclaw` binary comes from npm (`openclaw@2026.4.14`), not built from source
-- RTK's OpenClaw plugin is fetched in `Dockerfile.rtk` from the upstream RTK repo and copied into the gateway image; it is not vendored under `plugins/`
+- RTK's OpenClaw plugin directory is copied in `Dockerfile.rtk` from the upstream RTK repo and then copied into the gateway image; it is not vendored under `plugins/`
 - Browser container gets static IP (172.20.0.10) because CDP rejects hostname-based Host headers
 - Container runs as `node` user (UID 1000) — mounted volumes must match ownership
 - **This is a Raspberry Pi** — do not spawn heavy/parallel agents that consume excessive RAM

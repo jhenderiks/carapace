@@ -2,7 +2,7 @@
 
 ## OVERVIEW
 
-Two repo-local OpenClaw plugins extend the gateway: MCP server bridging and context-mode FTS5 search. RTK command rewriting comes from RTK's upstream OpenClaw plugin, which the RTK companion image fetches and the gateway image copies into `/opt/openclaw/plugins/rtk-rewrite`.
+Two repo-local OpenClaw plugins extend the gateway: MCP server bridging and context-mode FTS5 search. RTK command rewriting comes from RTK's upstream OpenClaw plugin directory, which the RTK companion image copies from the RTK repo and the gateway image copies into `/opt/openclaw/plugins/rtk-rewrite`.
 
 ## PLUGIN ARCHITECTURE
 
