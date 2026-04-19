@@ -73,24 +73,38 @@ RUN --mount=type=cache,target=${HOME}/.bun,uid=1000 \
   # openclaw/dist/extensions/*/node_modules/. These deps need to be
   # resolvable from the package root, so symlink them into the top-level
   # node_modules (skip if already present to avoid clobbering).
-  && for nm in ${APP}/node_modules/openclaw/dist/extensions/*/node_modules; do \
-       [ -d "$nm" ] || continue; \
-       for pkg in "$nm"/*; do \
+  && for nm in ${APP}/node_modules/openclaw/dist/extensions/*/node_modules; \
+    do \
+      [ -d "$nm" ] || continue; \
+      for pkg in "$nm"/*; do \
+        name=$(basename "$pkg"); \
+        case "$name" in \
+          @*) \
+            mkdir -p "${APP}/node_modules/$name"; \
+            for scoped in "$pkg"/*; do \
+              [ -e "$scoped" ] || continue; \
+              scoped_name=$(basename "$scoped"); \
+              [ ! -e "${APP}/node_modules/$name/$scoped_name" ] && ln -s "$scoped" "${APP}/node_modules/$name/$scoped_name" || true; \
+            done \
+            ;; \
+          .*) ;; \
+          *) [ ! -e "${APP}/node_modules/$name" ] && ln -s "$pkg" "${APP}/node_modules/$name" || true ;; \
+        esac; \
+      done; \
+    done \
+  # OpenClaw itself also vendors @mariozechner packages under
+  # node_modules/openclaw/node_modules/. Replace those nested copies with
+  # symlinks to the top-level installs so patchedDependencies apply to the
+  # code OpenClaw actually loads at runtime.
+  && if [ -d "${APP}/node_modules/openclaw/node_modules/@mariozechner" ]; then \
+       for pkg in ${APP}/node_modules/openclaw/node_modules/@mariozechner/*; do \
+         [ -e "$pkg" ] || continue; \
          name=$(basename "$pkg"); \
-         case "$name" in \
-           @*) \
-             mkdir -p "${APP}/node_modules/$name"; \
-             for scoped in "$pkg"/*; do \
-               [ -e "$scoped" ] || continue; \
-               scoped_name=$(basename "$scoped"); \
-               [ ! -e "${APP}/node_modules/$name/$scoped_name" ] && ln -s "$scoped" "${APP}/node_modules/$name/$scoped_name" || true; \
-             done \
-             ;; \
-           .*) ;; \
-           *) [ ! -e "${APP}/node_modules/$name" ] && ln -s "$pkg" "${APP}/node_modules/$name" || true ;; \
-         esac; \
+         [ -e "${APP}/node_modules/@mariozechner/$name" ] || continue; \
+         rm -rf "$pkg"; \
+         ln -s "${APP}/node_modules/@mariozechner/$name" "$pkg"; \
        done; \
-     done \
+     fi \
   && chmod -R u=rwX,go=rX ${APP}/node_modules/openclaw/dist/extensions
 
 ENTRYPOINT ["openclaw"]
