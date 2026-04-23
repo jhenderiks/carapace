@@ -1,6 +1,6 @@
---- a/dist/channel.runtime-BF16Ta-J.js
-+++ b/dist/channel.runtime-BF16Ta-J.js
-@@ -531,11 +531,17 @@
+--- a/dist/channel.runtime-BVBFgOOF.js
++++ b/dist/channel.runtime-BVBFgOOF.js
+@@ -616,11 +616,17 @@
  				let healthCheckEnabled = getBotUpdateAt != null;
  				let healthCheckInFlight = false;
  				let healthCheckTimer;
@@ -18,7 +18,7 @@
  					}
  				};
  				const stopHealthChecks = () => {
-@@ -587,6 +593,23 @@
+@@ -672,6 +678,23 @@
  				};
  				ws.on("open", () => {
  					opened = true;
