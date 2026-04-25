@@ -127,12 +127,12 @@ A model entry needs: `id`, `name`, `api`, `provider`, `baseUrl`, `reasoning`, `i
 
 | Package | Patch | What |
 |---------|-------|------|
-| `openclaw@2026.4.14` | `patches/openclaw@2026.4.14.patch` | Mattermost websocket ping/pong keepalive with pong-timeout reconnect |
+| `openclaw@2026.4.23` | `patches/openclaw@2026.4.23.patch` | Mattermost websocket ping/pong keepalive with pong-timeout reconnect |
 
 ## NOTES
 
 - The `rtk/` directory (37 wrapper scripts) is the legacy PATH-prepend approach. The `rtk-rewrite` plugin supersedes it but wrappers remain for the companion Docker image
-- `openclaw` binary comes from npm (`openclaw@2026.4.14`), not built from source
+- `openclaw` binary comes from npm (`openclaw@2026.4.23`), not built from source
 - Browser container gets static IP (172.20.0.10) because CDP rejects hostname-based Host headers
 - Container runs as `node` user (UID 1000) — mounted volumes must match ownership
 - **This is a Raspberry Pi** — do not spawn heavy/parallel agents that consume excessive RAM

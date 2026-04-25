@@ -1,6 +1,6 @@
---- a/dist/channel.runtime-BVBFgOOF.js
-+++ b/dist/channel.runtime-BVBFgOOF.js
-@@ -616,11 +616,17 @@
+--- a/dist/channel.runtime-BgcB65LJ.js
++++ b/dist/channel.runtime-BgcB65LJ.js
+@@ -620,11 +620,17 @@
  				let healthCheckEnabled = getBotUpdateAt != null;
  				let healthCheckInFlight = false;
  				let healthCheckTimer;
@@ -18,7 +18,7 @@
  					}
  				};
  				const stopHealthChecks = () => {
-@@ -672,6 +678,23 @@
+@@ -676,6 +682,23 @@
  				};
  				ws.on("open", () => {
  					opened = true;
@@ -29,7 +29,7 @@
 +					if (typeof ws.ping === "function") {
 +						pingTimer = setInterval(() => {
 +							if (Date.now() - lastPongAt > 6e4) {
-+								opts.runtime.error?.("mattermost websocket pong timeout — terminating");
++								opts.runtime.error?.("mattermost websocket pong timeout - terminating");
 +								ws.terminate();
 +								return;
 +							}
