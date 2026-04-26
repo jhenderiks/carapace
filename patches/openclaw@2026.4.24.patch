@@ -1,5 +1,5 @@
---- a/dist/channel.runtime-BgcB65LJ.js
-+++ b/dist/channel.runtime-BgcB65LJ.js
+--- a/dist/channel.runtime-DgzJLqrX.js
++++ b/dist/channel.runtime-DgzJLqrX.js
 @@ -620,11 +620,17 @@
  				let healthCheckEnabled = getBotUpdateAt != null;
  				let healthCheckInFlight = false;
