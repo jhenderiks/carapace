@@ -14,10 +14,10 @@
     "@modelcontextprotocol/sdk": "1.27.1",
     "context-mode": "1.0.24",
     "node-llama-cpp": "3.18.1",
-    "openclaw": "2026.4.24",
+    "openclaw": "2026.4.27",
     "typescript": "5.9.3"
   },
   "patchedDependencies": {
-    "openclaw@2026.4.24": "patches/openclaw@2026.4.24.patch"
+    "openclaw@2026.4.27": "patches/openclaw@2026.4.27.patch"
   }
 }

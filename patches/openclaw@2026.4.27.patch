@@ -1,6 +1,8 @@
---- a/dist/channel.runtime-DgzJLqrX.js
-+++ b/dist/channel.runtime-DgzJLqrX.js
-@@ -620,11 +620,17 @@
+diff --git a/dist/channel.runtime-CpzyTW9k.js b/dist/channel.runtime-CpzyTW9k.js
+index 5657db2412388aad8e955a1f3bb6c982c66afe72..4447671b897903f243bf09569c457ed8f3e4fa36 100644
+--- a/dist/channel.runtime-CpzyTW9k.js
++++ b/dist/channel.runtime-CpzyTW9k.js
+@@ -626,12 +626,18 @@ function createMattermostConnectOnce(opts) {
  				let healthCheckEnabled = getBotUpdateAt != null;
  				let healthCheckInFlight = false;
  				let healthCheckTimer;
@@ -11,14 +13,15 @@
  					if (healthCheckTimer !== void 0) {
  						clearTimeout(healthCheckTimer);
  						healthCheckTimer = void 0;
-+					}
+ 					}
 +					if (pingTimer !== void 0) {
 +						clearInterval(pingTimer);
 +						pingTimer = void 0;
- 					}
++					}
  				};
  				const stopHealthChecks = () => {
-@@ -676,6 +682,23 @@
+ 					healthCheckEnabled = false;
+@@ -682,6 +688,23 @@ function createMattermostConnectOnce(opts) {
  				};
  				ws.on("open", () => {
  					opened = true;
