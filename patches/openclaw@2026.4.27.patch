@@ -1,3 +1,40 @@
+diff --git a/node_modules/openclaw/.bun-tag-31525d8501449fca b/.bun-tag-31525d8501449fca
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+diff --git a/dist/bundled-runtime-root-D11Fl_T4.js b/dist/bundled-runtime-root-D11Fl_T4.js
+index ef8f9b4902fe9f6f99a128bdd880948d0031d3d2..b6d4d278a284d0c3e9cb36e8f9df41e37015c1c0 100644
+--- a/dist/bundled-runtime-root-D11Fl_T4.js
++++ b/dist/bundled-runtime-root-D11Fl_T4.js
+@@ -984,6 +984,11 @@ function shouldIncludeBundledPluginRuntimeDeps(params) {
+ 		manifestCache: params.manifestCache
+ 	});
+ }
++function usesLocalMemoryEmbeddings(config) {
++	if (!config || typeof config !== "object") return false;
++	if (normalizeOptionalLowercaseString(config.agents?.defaults?.memorySearch?.provider) === "local") return true;
++	return (config.agents?.list ?? []).some((agent) => normalizeOptionalLowercaseString(agent?.memorySearch?.provider) === "local");
++}
+ function collectBundledPluginRuntimeDeps(params) {
+ 	const versionMap = /* @__PURE__ */ new Map();
+ 	const manifestCache = /* @__PURE__ */ new Map();
+@@ -1014,6 +1019,17 @@ function collectBundledPluginRuntimeDeps(params) {
+ 			versionMap.set(dep.name, byVersion);
+ 		}
+ 	}
++	if (usesLocalMemoryEmbeddings(params.config)) {
++		const dep = parseInstallableRuntimeDep("node-llama-cpp", "3.18.1");
++		if (dep) {
++			const byVersion = versionMap.get(dep.name) ?? /* @__PURE__ */ new Map();
++			const pluginIds = byVersion.get(dep.version) ?? /* @__PURE__ */ new Set();
++			pluginIds.add("memory-core");
++			byVersion.set(dep.version, pluginIds);
++			versionMap.set(dep.name, byVersion);
++			includedPluginIds.add("memory-core");
++		}
++	}
+ 	const deps = [];
+ 	const conflicts = [];
+ 	for (const [name, byVersion] of versionMap.entries()) {
 diff --git a/dist/channel.runtime-CpzyTW9k.js b/dist/channel.runtime-CpzyTW9k.js
 index 5657db2412388aad8e955a1f3bb6c982c66afe72..4447671b897903f243bf09569c457ed8f3e4fa36 100644
 --- a/dist/channel.runtime-CpzyTW9k.js
