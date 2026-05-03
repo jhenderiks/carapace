@@ -10,6 +10,7 @@ RUN \
   DEBIAN_FRONTEND=noninteractive apt-get update \
   && apt-get install -y --no-install-recommends \
     chromium \
+    chromium-sandbox \
     ca-certificates \
     novnc \
     procps \

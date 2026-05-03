@@ -123,7 +123,6 @@ echo "[$(date -Iseconds)] starting chromium on internal CDP port $CDP_INTERNAL..
 # shellcheck disable=SC2086
 exec "$CHROMIUM_BIN" \
   $CHROMIUM_ARGS \
-  --no-sandbox \
   --disable-dev-shm-usage \
   --no-first-run \
   --no-default-browser-check \
