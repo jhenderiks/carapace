@@ -11,12 +11,16 @@ RUN \
   && apt-get install -y --no-install-recommends \
     chromium \
     ca-certificates \
+    novnc \
     procps \
     socat \
+    websockify \
+    x11vnc \
+    xvfb \
   && apt-get clean && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* \
   && getent group ${GID} >/dev/null || groupadd -g ${GID} chromium \
   && getent passwd ${UID} >/dev/null || useradd -m -u ${UID} -g ${GID} -s /bin/false chromium \
-  && mkdir -p /home/chromium/user-data \
+  && mkdir -p /home/chromium/user-data /home/chromium/.vnc \
   && chown -R ${UID}:${GID} /home/chromium
 
 USER ${UID}:${GID}
@@ -28,6 +32,6 @@ WORKDIR /home/chromium
 
 COPY --chown=${UID}:${GID} entrypoint.sh /entrypoint.sh
 
-EXPOSE 18800
+EXPOSE 18800 5900 6080
 
 ENTRYPOINT ["/entrypoint.sh"]
