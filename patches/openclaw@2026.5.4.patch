@@ -57,3 +57,42 @@
  		allowGatewaySubagentBinding: true,
  		modelHasVision: params.modelHasVision,
  		requireExplicitMessageTarget: params.requireExplicitMessageTarget,
+--- a/dist/load-DDXPrMIj.js
++++ b/dist/load-DDXPrMIj.js
+@@ -1,4 +1,5 @@
+ import { t as getActivePluginChannelRegistry } from "./runtime-DUcMA44B.js";
++import { a as sendMessageMattermost } from "./slash-state-CkVdVtvs.js";
+ //#region src/channels/plugins/registry-loader.ts
+ function createChannelRegistryLoader(resolveValue) {
+ 	return async (id) => {
+@@ -9,9 +10,29 @@ function createChannelRegistryLoader(resolveValue) {
+ }
+ //#endregion
+ //#region src/channels/plugins/outbound/load.ts
++const brambleMattermostOutboundAdapter = {
++	sendText: async (ctx) => sendMessageMattermost(ctx.to, ctx.text ?? "", {
++		cfg: ctx.cfg,
++		accountId: ctx.accountId,
++		replyToId: ctx.replyToId,
++		mediaLocalRoots: ctx.mediaLocalRoots,
++		mediaReadFile: ctx.mediaAccess?.readFile
++	}),
++	sendMedia: async (ctx) => sendMessageMattermost(ctx.to, ctx.text ?? "", {
++		cfg: ctx.cfg,
++		accountId: ctx.accountId,
++		replyToId: ctx.replyToId,
++		mediaUrl: ctx.mediaUrl,
++		mediaLocalRoots: ctx.mediaLocalRoots,
++		mediaReadFile: ctx.mediaAccess?.readFile
++	})
++};
+ const loadOutboundAdapterFromRegistry = createChannelRegistryLoader((entry) => entry.plugin.outbound);
+ async function loadChannelOutboundAdapter(id) {
+-	return loadOutboundAdapterFromRegistry(id);
++	const registryAdapter = await loadOutboundAdapterFromRegistry(id);
++	if (registryAdapter) return registryAdapter;
++	if (id === "mattermost") return brambleMattermostOutboundAdapter;
++	return registryAdapter;
+ }
+ //#endregion
+ export { loadChannelOutboundAdapter as t };

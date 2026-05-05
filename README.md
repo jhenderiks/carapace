@@ -421,7 +421,15 @@ Carapace is defense-in-depth, not a sandbox. It reduces risk — it doesn't elim
 
 ## Patches
 
-Carapace may ship patches for upstream dependencies when fixes haven't been released yet. There are currently no active dependency patches.
+Carapace ships Bun dependency patches in `patches/` when upstream OpenClaw fixes or deployment-specific compatibility changes have not been released yet. They are applied by `bun install` and baked into the container image during build.
+
+Current active patch:
+
+| Patch | Purpose |
+|---|---|
+| `patches/openclaw@2026.5.4.patch` | Keeps config-origin plugins eligible for control-plane manifest contracts, eagerly loads standalone plugin tools for gateway sessions, propagates sandbox runtime tool allowlists into effective inventory, and adds a Mattermost fallback outbound adapter for generic cron/heartbeat delivery when OpenClaw's channel registry loses the Mattermost adapter. |
+
+The Mattermost outbound fallback is intentionally narrow: it only applies when `loadChannelOutboundAdapter("mattermost")` cannot find a registry adapter, and delegates to OpenClaw's existing Mattermost send runtime. Normal Mattermost chat and delivery recovery paths remain unchanged.
 
 ## Related Projects
 
