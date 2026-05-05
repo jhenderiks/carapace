@@ -1,0 +1,59 @@
+--- a/dist/manifest-contract-eligibility-Dnd64Hwi.js
++++ b/dist/manifest-contract-eligibility-Dnd64Hwi.js
+@@ -3,7 +3,7 @@
+ import { n as getCurrentPluginMetadataSnapshot } from "./current-plugin-metadata-snapshot-BmzmKCvn.js";
+ //#region src/plugins/manifest-contract-eligibility.ts
+ function isManifestPluginAvailableForControlPlane(params) {
+-	if (params.plugin.origin === "bundled") return true;
++	if (params.plugin.origin === "bundled" || params.plugin.origin === "config") return true;
+ 	return isInstalledPluginEnabled(params.snapshot.index, params.plugin.id, params.config);
+ }
+ function hasManifestContractValue(params) {
+--- a/dist/openclaw-tools-Lbc6zzNy.js
++++ b/dist/openclaw-tools-Lbc6zzNy.js
+@@ -62,6 +62,7 @@
+ import { a as imageMimeFromFormat, n as detectMime } from "./mime-DhSq1FAs.js";
+ import { C as describeSessionsSendTool, S as describeSessionsListTool, T as describeUpdatePlanTool, _ as SESSIONS_SPAWN_TOOL_DISPLAY_SUMMARY, b as describeSessionStatusTool, g as SESSIONS_SPAWN_SUBAGENT_TOOL_DISPLAY_SUMMARY, h as SESSIONS_SEND_TOOL_DISPLAY_SUMMARY, m as SESSIONS_LIST_TOOL_DISPLAY_SUMMARY, p as SESSIONS_HISTORY_TOOL_DISPLAY_SUMMARY, u as CRON_TOOL_DISPLAY_SUMMARY, v as SESSION_STATUS_TOOL_DISPLAY_SUMMARY, w as describeSessionsSpawnTool, x as describeSessionsHistoryTool, y as UPDATE_PLAN_TOOL_DISPLAY_SUMMARY } from "./tool-policy-shared-SMxxNkkX.js";
+ import { a as resolvePluginTools, c as hasNonEmptyManifestEnvCandidate, d as manifestProviderBaseUrlGuardPasses, l as manifestConfigSignalPasses, u as manifestPluginSetupProviderEnvVars } from "./tools-gW9A7NO2.js";
++import { r as ensureStandalonePluginToolRegistryLoaded } from "./tools-gW9A7NO2.js";
+ import { D as textToSpeech } from "./tts-runtime-BX9tTdXZ.js";
+ import "./tts-CRAbbLnl.js";
+ import { a as getImageMetadata } from "./image-ops-BwK1DaRv.js";
+@@ -359,6 +360,19 @@
+ 		return resolveApplicablePluginRuntimeConfig(params.resolvedConfig ?? params.options?.config);
+ 	};
+ 	const authProfileStore = params.options?.authProfileStore;
++	ensureStandalonePluginToolRegistryLoaded({
++		...resolveOpenClawPluginToolInputs({
++			options: params.options,
++			resolvedConfig: params.resolvedConfig,
++			runtimeConfig: resolveCurrentRuntimeConfig(),
++			getRuntimeConfig: resolveCurrentRuntimeConfig
++		}),
++		existingToolNames: params.existingToolNames ?? /* @__PURE__ */ new Set(),
++		toolAllowlist: params.options?.pluginToolAllowlist,
++		toolDenylist: params.options?.pluginToolDenylist,
++		allowGatewaySubagentBinding: params.options?.allowGatewaySubagentBinding,
++		...authProfileStore ? { hasAuthForProvider: (providerId) => listProfilesForProvider(authProfileStore, providerId).length > 0 } : {}
++	});
+ 	return applyPluginToolDeliveryDefaults({
+ 		tools: resolvePluginTools({
+ 			...resolveOpenClawPluginToolInputs({
+--- a/dist/tools-effective-inventory-Dji5acrt.js
++++ b/dist/tools-effective-inventory-Dji5acrt.js
+@@ -115,6 +115,7 @@
+ 	});
+ 	const workspaceDir = params.workspaceDir ?? resolveAgentWorkspaceDir(params.cfg, agentId);
+ 	const agentDir = params.agentDir ?? resolveAgentDir(params.cfg, agentId);
++	const runtimeToolAllowlist = Array.isArray(params.cfg.tools?.sandbox?.tools?.allow) ? params.cfg.tools.sandbox.tools.allow : void 0;
+ 	const modelCompat = resolveEffectiveModelCompat({
+ 		cfg: params.cfg,
+ 		modelProvider: params.modelProvider,
+@@ -143,6 +144,7 @@
+ 		groupChannel: params.groupChannel ?? void 0,
+ 		groupSpace: params.groupSpace ?? void 0,
+ 		replyToMode: params.replyToMode,
++		runtimeToolAllowlist,
+ 		allowGatewaySubagentBinding: true,
+ 		modelHasVision: params.modelHasVision,
+ 		requireExplicitMessageTarget: params.requireExplicitMessageTarget,
