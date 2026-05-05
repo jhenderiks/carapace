@@ -3,7 +3,7 @@ import type {
   OpenClawPluginApi,
   RuntimeLogger,
 } from "openclaw/plugin-sdk";
-import { McpServerBridge } from "./bridge.js";
+import { McpServerBridge } from "./bridge.ts";
 import {
   asRecord,
   coerceNonNegativeInt,
@@ -12,8 +12,8 @@ import {
   formatError,
   isPlainObject,
   normalizeMcpResult,
-} from "./runtime.js";
-import { normalizeJsonSchema } from "./schema.js";
+} from "./runtime.ts";
+import { normalizeJsonSchema } from "./schema.ts";
 import type {
   McpToolDefinition,
   NormalizedPluginConfig,
@@ -21,7 +21,7 @@ import type {
   RawPluginConfig,
   RawServerConfig,
   ServerLifecycle,
-} from "./types.js";
+} from "./types.ts";
 
 type ServerRuntime = {
   config: NormalizedServerConfig;

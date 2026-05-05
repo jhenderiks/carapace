@@ -1,0 +1,71 @@
+--- a/dist/manifest-contract-eligibility-Bm6pc8ez.js
++++ b/dist/manifest-contract-eligibility-Bm6pc8ez.js
+@@ -3,7 +3,7 @@
+ import { n as getCurrentPluginMetadataSnapshot } from "./current-plugin-metadata-snapshot-BwrmwWAA.js";
+ //#region src/plugins/manifest-contract-eligibility.ts
+ function isManifestPluginAvailableForControlPlane(params) {
+-	if (params.plugin.origin === "bundled") return true;
++	if (params.plugin.origin === "bundled" || params.plugin.origin === "config") return true;
+ 	return isInstalledPluginEnabled(params.snapshot.index, params.plugin.id, params.config);
+ }
+ function hasManifestContractValue(params) {
+--- a/dist/openclaw-tools-BDF6gNXk.js
++++ b/dist/openclaw-tools-BDF6gNXk.js
+@@ -67,7 +67,7 @@
+ import { _ as runAgentStep, f as ANNOUNCE_SKIP_TOKEN, g as isReplySkip, h as isNonDeliverableSessionsReply, m as isAnnounceSkip, p as REPLY_SKIP_TOKEN } from "./subagent-session-cleanup-BDUN5Noq.js";
+ import { C as describeSessionsSendTool, S as describeSessionsListTool, T as describeUpdatePlanTool, _ as SESSIONS_SPAWN_TOOL_DISPLAY_SUMMARY, b as describeSessionStatusTool, g as SESSIONS_SPAWN_SUBAGENT_TOOL_DISPLAY_SUMMARY, h as SESSIONS_SEND_TOOL_DISPLAY_SUMMARY, i as normalizeToolName, m as SESSIONS_LIST_TOOL_DISPLAY_SUMMARY, n as expandToolGroups, p as SESSIONS_HISTORY_TOOL_DISPLAY_SUMMARY, u as CRON_TOOL_DISPLAY_SUMMARY, v as SESSION_STATUS_TOOL_DISPLAY_SUMMARY, w as describeSessionsSpawnTool, x as describeSessionsHistoryTool, y as UPDATE_PLAN_TOOL_DISPLAY_SUMMARY } from "./tool-policy-shared-MN-JZIlL.js";
+ import "./tool-policy-BL2axuiI.js";
+-import { a as resolvePluginTools, c as hasNonEmptyManifestEnvCandidate, d as manifestProviderBaseUrlGuardPasses, l as manifestConfigSignalPasses, u as manifestPluginSetupProviderEnvVars } from "./tools-D9CRirqH.js";
++import { a as resolvePluginTools, c as hasNonEmptyManifestEnvCandidate, d as manifestProviderBaseUrlGuardPasses, l as manifestConfigSignalPasses, r as ensureStandalonePluginToolRegistryLoaded, u as manifestPluginSetupProviderEnvVars } from "./tools-D9CRirqH.js";
+ import { a as resolveEffectiveSessionToolsVisibility, r as createSessionVisibilityGuard, t as createAgentToAgentPolicy } from "./session-visibility-CaJZ_mdx.js";
+ import { a as resolveCurrentSessionClientAlias, c as resolveMainSessionAlias, d as shouldResolveSessionIdInput, i as resolveSandboxedSessionToolContext, l as resolveSessionReference, n as deriveChannel, o as resolveDisplaySessionKey, r as resolveSessionToolContext, s as resolveInternalSessionKey, t as classifySessionKind, u as resolveVisibleSessionReference } from "./sessions-helpers-C1uR5ALP.js";
+ import { c as resolveSubagentController, i as killControlledSubagentRun, n as MAX_STEER_MESSAGE_CHARS, o as listControlledSubagentRuns, r as killAllControlledSubagentRuns, s as resolveControlledSubagentTarget, t as MAX_RECENT_MINUTES, u as steerControlledSubagentRun } from "./subagent-control-z6yI36FD.js";
+@@ -326,16 +326,22 @@
+ 		});
+ 	};
+ 	const authProfileStore = params.options?.authProfileStore;
++	const pluginToolInputs = {
++		...resolveOpenClawPluginToolInputs({
++			options: params.options,
++			resolvedConfig: params.resolvedConfig,
++			runtimeConfig: resolveCurrentRuntimeConfig(),
++			getRuntimeConfig: resolveCurrentRuntimeConfig
++		}),
++		existingToolNames: params.existingToolNames ?? /* @__PURE__ */ new Set(),
++		toolAllowlist: params.options?.pluginToolAllowlist,
++		allowGatewaySubagentBinding: params.options?.allowGatewaySubagentBinding,
++		...authProfileStore ? { hasAuthForProvider: (providerId) => listProfilesForProvider(authProfileStore, providerId).length > 0 } : {}
++	};
++	ensureStandalonePluginToolRegistryLoaded(pluginToolInputs);
+ 	return applyPluginToolDeliveryDefaults({
+ 		tools: resolvePluginTools({
+-			...resolveOpenClawPluginToolInputs({
+-				options: params.options,
+-				resolvedConfig: params.resolvedConfig,
+-				runtimeConfig: resolveCurrentRuntimeConfig(),
+-				getRuntimeConfig: resolveCurrentRuntimeConfig
+-			}),
+-			existingToolNames: params.existingToolNames ?? /* @__PURE__ */ new Set(),
+-			toolAllowlist: params.options?.pluginToolAllowlist,
++			...pluginToolInputs,
+ 			allowGatewaySubagentBinding: params.options?.allowGatewaySubagentBinding,
+ 			...authProfileStore ? { hasAuthForProvider: (providerId) => listProfilesForProvider(authProfileStore, providerId).length > 0 } : {}
+ 		}),
+--- a/dist/tools-effective-inventory-Bv8DWsYK.js
++++ b/dist/tools-effective-inventory-Bv8DWsYK.js
+@@ -115,6 +115,7 @@
+ 	});
+ 	const workspaceDir = params.workspaceDir ?? resolveAgentWorkspaceDir(params.cfg, agentId);
+ 	const agentDir = params.agentDir ?? resolveAgentDir(params.cfg, agentId);
++	const runtimeToolAllowlist = Array.isArray(params.cfg.tools?.sandbox?.tools?.allow) ? params.cfg.tools.sandbox.tools.allow : void 0;
+ 	const modelCompat = resolveEffectiveModelCompat({
+ 		cfg: params.cfg,
+ 		modelProvider: params.modelProvider,
+@@ -143,6 +144,7 @@
+ 		groupChannel: params.groupChannel ?? void 0,
+ 		groupSpace: params.groupSpace ?? void 0,
+ 		replyToMode: params.replyToMode,
++		runtimeToolAllowlist,
+ 		allowGatewaySubagentBinding: true,
+ 		modelHasVision: params.modelHasVision,
+ 		requireExplicitMessageTarget: params.requireExplicitMessageTarget,

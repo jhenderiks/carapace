@@ -1,7 +1,7 @@
 import { strict as assert } from "node:assert";
 
-import { DEFAULT_RTK_CONFIG } from "./routing.js";
-import { maybeRewriteToolParams } from "./handler.js";
+import { DEFAULT_RTK_CONFIG } from "./routing.ts";
+import { maybeRewriteToolParams } from "./handler.ts";
 
 {
   const params = maybeRewriteToolParams(

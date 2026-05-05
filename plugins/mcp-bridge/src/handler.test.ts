@@ -1,6 +1,6 @@
 import { strict as assert } from "node:assert";
 
-import { deepNormalizeSchema, normalizeJsonSchema } from "./schema.js";
+import { deepNormalizeSchema, normalizeJsonSchema } from "./schema.ts";
 
 // Missing input → default empty object schema
 assert.deepStrictEqual(normalizeJsonSchema(undefined), {

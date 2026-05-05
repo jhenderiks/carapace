@@ -60,11 +60,11 @@ COPY --from=rtk-image /usr/local/bin/rtk /usr/local/bin/rtk
 
 WORKDIR ${APP}
 
-COPY --chown=node: bun.lock package.json ./
-COPY --chown=node: patches patches
-COPY --chown=node: plugins plugins
+COPY --chown=1000:1000 bun.lock package.json ./
+COPY --chown=1000:1000 patches patches
+COPY --chown=1000:1000 plugins plugins
 
-RUN --mount=type=cache,target=${HOME}/.bun,uid=1000 \
+RUN \
   # install dependencies
   bun i --frozen-lockfile \
   # install any missing runtime deps declared by bundled extensions
@@ -97,14 +97,17 @@ RUN --mount=type=cache,target=${HOME}/.bun,uid=1000 \
   # symlinks to the top-level installs so patchedDependencies apply to the
   # code OpenClaw actually loads at runtime.
   && if [ -d "${APP}/node_modules/openclaw/node_modules/@mariozechner" ]; then \
-       for pkg in ${APP}/node_modules/openclaw/node_modules/@mariozechner/*; do \
-         [ -e "$pkg" ] || continue; \
-         name=$(basename "$pkg"); \
-         [ -e "${APP}/node_modules/@mariozechner/$name" ] || continue; \
-         rm -rf "$pkg"; \
-         ln -s "${APP}/node_modules/@mariozechner/$name" "$pkg"; \
-       done; \
-     fi \
+      for pkg in ${APP}/node_modules/openclaw/node_modules/@mariozechner/*; do \
+        [ -e "$pkg" ] || continue; \
+        name=$(basename "$pkg"); \
+        [ -e "${APP}/node_modules/@mariozechner/$name" ] || continue; \
+        rm -rf "$pkg"; \
+        ln -s "${APP}/node_modules/@mariozechner/$name" "$pkg"; \
+      done; \
+    fi \
+  # OpenClaw public-surface loading rejects hardlinked bundled extension files.
+  # Rewrite multiply-linked files under dist/extensions to unique inodes.
+  && find ${APP}/node_modules/openclaw/dist/extensions -type f -links +1 -exec sh -c 'for f do tmp="$f.tmp.$$"; cat "$f" > "$tmp" && mv "$tmp" "$f"; done' sh {} + \
   && chmod -R u=rwX,go=rX ${APP}/node_modules/openclaw/dist/extensions
 
 ENTRYPOINT ["openclaw"]

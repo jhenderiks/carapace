@@ -21,5 +21,8 @@
   "trustedDependencies": [
     "node-llama-cpp",
     "openclaw"
-  ]
+  ],
+  "patchedDependencies": {
+    "openclaw@2026.5.2": "patches/openclaw@2026.5.2.patch"
+  }
 }

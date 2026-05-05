@@ -1,4 +1,4 @@
-import { isPlainObject } from "./runtime.js";
+import { isPlainObject } from "./runtime.ts";
 
 export function normalizeJsonSchema(inputSchema: unknown): Record<string, unknown> {
   if (!isPlainObject(inputSchema)) {

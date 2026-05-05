@@ -1,6 +1,6 @@
 import { strict as assert } from "node:assert";
 
-import { normalizeContextModeConfig } from "./types.js";
+import { normalizeContextModeConfig } from "./types.ts";
 
 {
   const config = normalizeContextModeConfig(undefined);

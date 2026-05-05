@@ -1,12 +1,12 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import type { RuntimeLogger } from "openclaw/plugin-sdk";
-import { formatError, isPlainObject } from "./runtime.js";
+import { formatError, isPlainObject } from "./runtime.ts";
 import type {
   McpCallResult,
   McpToolDefinition,
   NormalizedServerConfig,
-} from "./types.js";
+} from "./types.ts";
 
 const PLUGIN_VERSION = "0.1.0";
 
@@ -14,12 +14,19 @@ export class McpServerBridge {
   private client: Client | undefined;
   private transport: StdioClientTransport | undefined;
   private connectPromise: Promise<void> | undefined;
+  private readonly serverId: string;
+  private readonly config: NormalizedServerConfig;
+  private readonly logger: RuntimeLogger;
 
   constructor(
-    private readonly serverId: string,
-    private readonly config: NormalizedServerConfig,
-    private readonly logger: RuntimeLogger,
-  ) {}
+    serverId: string,
+    config: NormalizedServerConfig,
+    logger: RuntimeLogger,
+  ) {
+    this.serverId = serverId;
+    this.config = config;
+    this.logger = logger;
+  }
 
   async connect(): Promise<void> {
     if (this.client) {

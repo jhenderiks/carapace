@@ -1,6 +1,6 @@
 import type { RuntimeLogger } from "openclaw/plugin-sdk";
-import type { McpServerBridge } from "./bridge.js";
-import type { McpCallResult, NormalizedServerConfig } from "./types.js";
+import type { McpServerBridge } from "./bridge.ts";
+import type { McpCallResult, NormalizedServerConfig } from "./types.ts";
 
 export type McpToolRuntime = {
   config: Pick<

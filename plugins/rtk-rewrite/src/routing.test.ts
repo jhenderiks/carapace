@@ -1,8 +1,8 @@
 import { strict as assert } from "node:assert";
 import { execFileSync } from "node:child_process";
 
-import { applyRtkRouting, normalizeRtkConfig, DEFAULT_RTK_CONFIG } from "./routing.js";
-import type { RewriteOptions } from "./routing.js";
+import { applyRtkRouting, normalizeRtkConfig, DEFAULT_RTK_CONFIG } from "./routing.ts";
+import type { RewriteOptions } from "./routing.ts";
 
 // ---------------------------------------------------------------------------
 // normalizeRtkConfig

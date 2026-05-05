@@ -1,5 +1,7 @@
-export { default } from "./src/handler.js";
-export { McpServerBridge } from "./src/bridge.js";
+import register from "./src/handler.ts";
+
+export default register;
+export { McpServerBridge } from "./src/bridge.ts";
 export {
   asRecord,
   coerceNonNegativeInt,
@@ -10,8 +12,8 @@ export {
   normalizeMcpResult,
   sleep,
   type McpToolRuntime,
-} from "./src/runtime.js";
-export { deepNormalizeSchema, normalizeJsonSchema } from "./src/schema.js";
+} from "./src/runtime.ts";
+export { deepNormalizeSchema, normalizeJsonSchema } from "./src/schema.ts";
 export type {
   McpCallResult,
   McpToolDefinition,
@@ -20,4 +22,4 @@ export type {
   RawPluginConfig,
   RawServerConfig,
   ServerLifecycle,
-} from "./src/types.js";
+} from "./src/types.ts";

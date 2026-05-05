@@ -3,8 +3,8 @@ import {
   applyRtkRouting,
   normalizeRtkConfig,
   type RewriteOptions,
-} from "./routing.js";
-import type { RtkConfig } from "./types.js";
+} from "./routing.ts";
+import type { RtkConfig } from "./types.ts";
 
 type ToolParams = Record<string, unknown>;
 

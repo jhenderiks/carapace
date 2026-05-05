@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import type { RtkConfig } from "./types.js";
+import type { RtkConfig } from "./types.ts";
 
 export const DEFAULT_RTK_CONFIG: RtkConfig = {
   enabled: true,

@@ -2,7 +2,7 @@ import {
   coercePositiveInt,
   isPlainObject,
   type NormalizedServerConfig,
-} from "../../mcp-bridge/index.js";
+} from "../../mcp-bridge/index.ts";
 
 const DEFAULT_COMMAND = "context-mode";
 const DEFAULT_TOOL_PREFIX = "cm";

@@ -13,8 +13,8 @@ import {
   normalizeJsonSchema,
   normalizeMcpResult,
   type NormalizedServerConfig,
-} from "../../mcp-bridge/index.js";
-import { normalizeContextModeConfig, toServerConfig } from "./types.js";
+} from "../../mcp-bridge/index.ts";
+import { normalizeContextModeConfig, toServerConfig } from "./types.ts";
 
 type CachedToolDefs = Awaited<ReturnType<McpServerBridge["listTools"]>>;
 
@@ -25,6 +25,18 @@ type SandboxRegistryEntry = {
 
 const SANDBOX_CM_SERVER_PATH =
   "/opt/openclaw/node_modules/context-mode/server.bundle.mjs";
+
+const CONTEXT_MODE_MCP_TOOL_NAMES = [
+  "ctx_execute",
+  "ctx_execute_file",
+  "ctx_index",
+  "ctx_search",
+  "ctx_fetch_and_index",
+  "ctx_batch_execute",
+  "ctx_stats",
+  "ctx_doctor",
+  "ctx_upgrade",
+] as const;
 
 // Module-level bridge cache: one MCP process per agent workspace.
 // Keyed by workspaceDir to handle registry reloads (different cache keys
@@ -126,6 +138,28 @@ function resolveAnySandboxContainerName(
 export default function register(api: OpenClawPluginApi): void {
   const config = normalizeContextModeConfig(api.pluginConfig);
   const skipTools = new Set(config.skipTools);
+
+  const toOpenClawToolName = (mcpToolName: string): string => {
+    const baseName = mcpToolName.startsWith("ctx_")
+      ? mcpToolName.slice(4)
+      : mcpToolName;
+
+    return config.toolPrefix ? `${config.toolPrefix}_${baseName}` : mcpToolName;
+  };
+
+  const declaredToolNames = CONTEXT_MODE_MCP_TOOL_NAMES.filter(
+    (toolName) => !skipTools.has(toolName),
+  ).map(toOpenClawToolName);
+
+  api.on("gateway_start", async () => {
+    try {
+      await ensureToolDefs();
+    } catch (error) {
+      api.logger.warn(
+        `[context-mode] initial tool definition load failed: ${formatError(error)}`,
+      );
+    }
+  });
 
   function buildSandboxServerConfig(
     baseServerConfig: NormalizedServerConfig,
@@ -271,8 +305,6 @@ export default function register(api: OpenClawPluginApi): void {
     // Ensure bridge can be created for this session (and warm cache).
     getOrCreateBridge(workspaceDir, ctx.agentId);
 
-    const prefix = config.toolPrefix;
-
     const tools: AnyAgentTool[] = [];
 
     for (const mcpTool of cachedToolDefs) {
@@ -280,7 +312,7 @@ export default function register(api: OpenClawPluginApi): void {
         continue;
       }
 
-      const toolName = prefix ? `${prefix}_${mcpTool.name}` : mcpTool.name;
+      const toolName = toOpenClawToolName(mcpTool.name);
 
       tools.push({
         name: toolName,
@@ -319,7 +351,7 @@ export default function register(api: OpenClawPluginApi): void {
     );
 
     return tools;
-  });
+  }, { names: declaredToolNames });
 
   // Pre-load tool definitions so the factory has them synchronously.
   api.on("gateway_start", async () => {

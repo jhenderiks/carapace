@@ -3,6 +3,19 @@
   "name": "Context Mode",
   "description": "FTS5-indexed knowledge base for large tool outputs",
   "version": "0.1.0",
+  "contracts": {
+    "tools": [
+      "cm_execute",
+      "cm_execute_file",
+      "cm_index",
+      "cm_search",
+      "cm_fetch_and_index",
+      "cm_batch_execute",
+      "cm_stats",
+      "cm_doctor",
+      "cm_upgrade"
+    ]
+  },
   "configSchema": {
     "type": "object",
     "additionalProperties": false,
